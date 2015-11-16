@@ -705,7 +705,7 @@ var TSCore;
         })(System = App.System || (App.System = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="../typings/ts-core.d.ts" />
+/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="TSCore/App/App.ts" />
 /// <reference path="TSCore/App/Auth/AccountType.ts" />

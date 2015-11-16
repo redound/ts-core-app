@@ -1,4 +1,3 @@
-/// <reference path="../typings/ts-core.d.ts" />
 declare module TSCore.App {
 }
 declare module TSCore.App.Auth {

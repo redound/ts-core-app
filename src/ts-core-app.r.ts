@@ -1,4 +1,4 @@
-/// <reference path="../typings/ts-core.d.ts" />
+/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 
 //grunt-start
