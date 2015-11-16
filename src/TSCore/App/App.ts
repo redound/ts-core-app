@@ -1,0 +1,3 @@
+module TSCore.App {
+
+}

@@ -1,0 +1,45 @@
+{
+  "name": "ts-core-app",
+  "version": "0.0.1",
+  "homepage": "https://github.com/ts-core/ts-core-app",
+  "authors": [
+    "Olivier Andriessen <olivierandriessen@gmail.com>",
+    "Bart Blok <bart@wittig.nl>"
+  ],
+  "description": "TypeScript App Library",
+  "main": [
+    "build/ts-core-app.js",
+    "build/ts-core-app.min.js",
+    "build/ts-core-app.d.ts"
+  ],
+  "dependencies": {
+    "underscore": "^1.8.3"
+  },
+  "keywords": [
+    "typescript",
+    "javascript",
+    "core",
+    "library",
+    "collection",
+    "dictionary",
+    "array",
+    "set",
+    "events",
+    "config",
+    "di",
+    "grid",
+    "sortedcollection",
+    "geometry",
+    "data",
+    "model",
+    "size",
+    "point"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
