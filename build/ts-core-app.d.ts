@@ -1,3 +1,5 @@
+/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
+/// <reference path="../typings/tsd.d.ts" />
 declare module TSCore.App {
 }
 declare module TSCore.App.Auth {
@@ -63,43 +65,61 @@ declare module TSCore.App.Auth {
     }
 }
 declare module TSCore.App.Data {
+    enum ModelRelationType {
+        ONE = 0,
+        MANY = 1,
+    }
     interface IModelInterface extends TSCore.Data.IModelInterface {
     }
+    interface IModelRelationsInterface {
+        [name: string]: IModelRelationConfigInterface;
+    }
+    interface IModelRelationConfigInterface {
+        store?: string;
+        type?: ModelRelationType;
+        localKey?: string;
+        foreignKey: string;
+        dataKey?: string;
+    }
     class Model extends TSCore.Data.Model {
-        protected _relationKeys: TSCore.Data.Dictionary<string, TSCore.Data.Collection<any>>;
+        protected _relationKeys: TSCore.Data.Dictionary<string, any>;
         constructor(data?: {});
-        static relations(): any;
-        getRelation(type: string): ng.IPromise<any>;
-        getRelationStored(type: string): any[];
-        addRelationKey(type: string, key: any): void;
-        addManyRelationKeys(type: string, keys: any[]): void;
-        removeRelationKey(type: string, key: any): void;
-        getRelationKeys(type: string): any[];
+        static relations(): IModelRelationsInterface;
+        getRelation(name: string): ng.IPromise<any>;
+        getRelationStored(name: string): any;
+        addRelationKey(name: string, key: any): void;
+        addManyRelationKeys(name: string, keys: any[]): any;
+        setRelationKey(name: string, key: any): any;
+        removeRelationKey(name: string, key: any): void;
+        getManyRelationKeys(name: string): any[];
+        getRelationKey(name: string): any;
     }
 }
 declare module TSCore.App.Data {
+    interface IModelQueryOptions {
+        include?: string[];
+    }
     class RemoteModelStore<T extends Model> {
         protected $q: ng.IQService;
         protected $injector: any;
         endpoint: TSCore.App.Http.ApiEndpoint;
-        modelClass: TSCore.App.Data.IModelInterface;
+        modelClass: any;
         static $inject: string[];
         store: TSCore.Data.ModelDictionary<any, T>;
-        protected _storeComplete: boolean;
-        private _processListResponseCallback;
-        private _processGetResponseCallback;
-        constructor($q: ng.IQService, $injector: any, endpoint: TSCore.App.Http.ApiEndpoint, modelClass: TSCore.App.Data.IModelInterface);
-        list(userOptions?: any, requestOptions?: TSCore.App.Http.IApiRequest, fresh?: boolean): ng.IPromise<T[]>;
-        get(id: any, userOptions?: any, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
+        protected _loadedRequestConfigs: TSCore.Data.Collection<string>;
+        protected _pendingRequests: TSCore.Data.Dictionary<string, ng.IPromise<T>>;
+        constructor($q: ng.IQService, $injector: any, endpoint: TSCore.App.Http.ApiEndpoint, modelClass: any);
+        list(queryOptions?: IModelQueryOptions, requestOptions?: TSCore.App.Http.IApiRequest, fresh?: boolean): ng.IPromise<T[]>;
+        get(id: any, queryOptions?: IModelQueryOptions, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
         getMany(ids: any[], userOptions?: any, requestOptions?: {}, fresh?: boolean): ng.IPromise<T[]>;
         listStored(): T[];
         getStored(id: any): T;
         getManyStored(ids: any[]): T[];
-        importOne(data: any): T;
-        importMany(data: any[]): T[];
-        protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse): T[];
-        protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse): T;
-        protected _processRelations(itemModel: T, itemData: any): void;
+        importOne(itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
+        importMany(data: any[], queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
+        protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
+        protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
+        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
     }
 }
 declare module TSCore.App.Http {
