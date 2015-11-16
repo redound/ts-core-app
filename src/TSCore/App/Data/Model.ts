@@ -1,83 +1,136 @@
 module TSCore.App.Data {
 
-    export interface IModelInterface extends TSCore.Data.IModelInterface {}
+    import Exception = TSCore.Exception.Exception;
+    export enum ModelRe lationType {
+        ONE,
+        MANY
+    }
 
-    export class Model extends TSCore.Data.Model {
+    export interface IMode lInterface extends TSCore.Data.IModelInterface {}
 
-        protected _relationKeys: TSCore.Data.Dictionary<string, TSCore.Data.Collection<any>>;
+    export interface IModelRelationsInterface {
+
+        [name: string]: IModelRelationConfigInterface
+    }
+
+    export interface IModelRelationConfigInterface {
+
+        store?: string,
+        type?: ModelRelationType,
+        localKey?: string,
+        foreignKey: string,
+        dataKey?: string
+    }
+
+
+    export c lass Model extends T SCore.Data.Model {
+
+        protected _relationKeys: TSCore.Data.Dictionary<string, any>;
 
         constructor(data?:{}) {
 
             super(data);
 
-            this._relationKeys = new TSCore.Data.Dictionary<string, TSCore.Data.Collection<any>>();
+            this._relationKeys = new TSCore.Data.Dictionary<string, any>();
         }
 
-        public static relations(): any {
+        public static relations(): IModelRelationsInterface {
             return {};
         }
 
 
-        public getRelation(type: string): ng.IPromise<any> {
+         public getRela tion(name: string): ng.IPromise<any> {
 
-            var relationStoreName = this.static.relations()[type];
-            if(!relationStoreName){
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
                 return null;
             }
 
-            var relationKeys = this.getRelationKeys(type);
-
             // TODO: Get the store in a proper way
-            var relationStore = angular.element(document).injector().get(relationStoreName);
+            var relationStore = angular.element(document).injector().get(relationConfig.store);
+            var result = null;
 
-            return relationStore.getMany(relationKeys);
+            if(relationConfig.type == ModelRelationType.ONE){
+
+                result = relationStore.get(this.getRelationKey(name));
+            }
+             els e {
+
+                result = relationStore.getMany(this.getManyRelationKeys(name));
+            }
+
+            return result;
         }
 
-        public getRelationStored(type: string): any[] {
+        public getRelationStored(name: string): any {
 
-            var relationStoreName = this.static.relations()[type];
-            if(!relationStoreName){
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
+                 return null;
+             }
+
+            // TODO: Get the store in a proper way
+            var relationStore = angular.element(document).injector().get(relationConfig.store);
+            var result = null;
+
+            if(relationConfig.type == ModelRelationType.ONE){
+
+                result = relationStore.getStored(this.getRelationKey(name));
+            }
+            else {
+
+                 result = rela tionStore.getManyStored(this.getManyRelationKeys(name));
+            }
+
+            return result;
+        }
+
+
+        public addRelationKey(name: string, key: any) {
+
+            this.addManyRelationKeys(name, [key]);
+        }
+
+        public addManyRelationKeys(name: string, keys: any[]) {
+
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
                 return null;
             }
 
-            var relationKeys = this.getRelationKeys(type);
+            if(relationConfig.type == ModelRelationType.ONE){
+                throw new Exception('Attempted to add many relation keys, but relationship is of type ONE', 0, { name: name, keys: keys });
+            }
 
-            // TODO: Get the store in a proper way
-            var relationStore = angular.element(document).injector().get(relationStoreName);
-
-            return relationStore.getManyStored(relationKeys);
-        }
-
-
-        public addRelationKey(type: string, key: any) {
-
-            var relationKeys = this._relationKeys.get(type);
+            var relationKeys = this._relationKeys.get(name);
 
             if(!relationKeys){
 
                 relationKeys = new TSCore.Data.Collection<any>();
-                this._relationKeys.set(type, relationKeys);
-            }
-
-            relationKeys.add(key);
-        }
-
-        public addManyRelationKeys(type: string, keys: any[]) {
-
-            var relationKeys = this._relationKeys.get(type);
-
-            if(!relationKeys){
-
-                relationKeys = new TSCore.Data.Collection<any>();
-                this._relationKeys.set(type, relationKeys);
+                this._relationKeys.set(name, relationKeys);
             }
 
             relationKeys.addMany(keys);
         }
 
-        public removeRelationKey(type: string, key: any) {
+        public setRelationKey(name: string, key: any) {
 
-            var relationKeys = this._relationKeys.get(type);
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
+                return null;
+            }
+
+            if(relationConfig.type == ModelRelationType.MANY){
+                throw new Exception('Attempted to add one relation key, but relationship is of type MANY', 0, { name: name, key: key });
+            }
+
+            this._relationKeys.set(name, key);
+        }
+
+
+        public removeRelationKey(name: string, key: any) {
+
+            var relationKeys = this._relationKeys.get(name);
 
             if(!relationKeys){
                 return;
@@ -86,10 +139,33 @@ module TSCore.App.Data {
             relationKeys.remove(key);
         }
 
-        public getRelationKeys(type: string): any[] {
+        public getManyRelationKeys(name: string): any[] {
 
-            var relationKeys = this._relationKeys.get(type);
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
+                return null;
+            }
+
+            if(relationConfig.type == ModelRelationType.ONE){
+                throw new Exception('Attempted to get many relation keys, but relationship is of type ONE', 0, { name: name });
+            }
+
+            var relationKeys = this._relationKeys.get(name);
             return relationKeys ? relationKeys.toArray() : [];
+        }
+
+        public getRelationKey(name: string): any {
+
+            var relationConfig = this.static.relations()[name];
+            if(!relationConfig){
+                return null;
+            }
+
+            if(relationConfig.type == ModelRelationType.MANY){
+                throw new Exception('Attempted to get one relation key, but relationship is of type MANY', 0, { name: name });
+            }
+
+            return this._relationKeys.get(name);
         }
     }
 }
