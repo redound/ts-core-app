@@ -1,12 +1,12 @@
 module TSCore.App.Data {
 
     import Exception = TSCore.Exception.Exception;
-    export enum ModelRe lationType {
+    export enum ModelRelationType {
         ONE,
         MANY
     }
 
-    export interface IMode lInterface extends TSCore.Data.IModelInterface {}
+    export interface IModelInterface extends TSCore.Data.IModelInterface {}
 
     export interface IModelRelationsInterface {
 
@@ -23,7 +23,7 @@ module TSCore.App.Data {
     }
 
 
-    export c lass Model extends T SCore.Data.Model {
+    export class Model extends TSCore.Data.Model {
 
         protected _relationKeys: TSCore.Data.Dictionary<string, any>;
 
@@ -39,7 +39,7 @@ module TSCore.App.Data {
         }
 
 
-         public getRela tion(name: string): ng.IPromise<any> {
+        public getRelation(name: string): ng.IPromise<any> {
 
             var relationConfig = this.static.relations()[name];
             if(!relationConfig){
@@ -54,7 +54,7 @@ module TSCore.App.Data {
 
                 result = relationStore.get(this.getRelationKey(name));
             }
-             els e {
+            else {
 
                 result = relationStore.getMany(this.getManyRelationKeys(name));
             }
@@ -66,8 +66,8 @@ module TSCore.App.Data {
 
             var relationConfig = this.static.relations()[name];
             if(!relationConfig){
-                 return null;
-             }
+                return null;
+            }
 
             // TODO: Get the store in a proper way
             var relationStore = angular.element(document).injector().get(relationConfig.store);
@@ -79,7 +79,7 @@ module TSCore.App.Data {
             }
             else {
 
-                 result = rela tionStore.getManyStored(this.getManyRelationKeys(name));
+                result = relationStore.getManyStored(this.getManyRelationKeys(name));
             }
 
             return result;
