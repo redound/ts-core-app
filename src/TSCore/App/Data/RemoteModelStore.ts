@@ -6,7 +6,12 @@ module TSCore.App.Data {
     }
 
     export interface IModelQueryOptions {
-        include?: string[]
+        include?: IModelQueryOptionRelation[]
+    }
+
+    export interface IModelQueryOptionRelation {
+        relation: string,
+        queryOptions?: IModelQueryOptions
     }
 
     export class RemoteModelStore<T extends Model> {
@@ -173,9 +178,9 @@ module TSCore.App.Data {
             var includes = (queryOptions && queryOptions.include) || [];
             var model = _.clone(itemModel);
 
-            _.each(includes, (relationName: string) => {
+            _.each(includes, (relationObject: IModelQueryOptionRelation) => {
 
-                var relationConfig = model.static.relations()[relationName];
+                var relationConfig = model.static.relations()[relationObject.relation];
                 if(!relationConfig){
                     return;
                 }
@@ -194,15 +199,15 @@ module TSCore.App.Data {
                         var getPromise: ng.IPromise<T> = null;
 
                         if(dataValue){
-                            getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue));
+                            getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue), relationObject.queryOptions);
                         }
                         else {
-                            getPromise = relationStore.get(localKeyValue);
+                            getPromise = relationStore.get(localKeyValue, relationObject.queryOptions);
                         }
 
                         getPromise.then((relationModel) => {
 
-                            model[relationName] = relationModel;
+                            model[relationObject.relation] = relationModel;
                         });
 
                         promises.push(getPromise);
@@ -215,15 +220,15 @@ module TSCore.App.Data {
                         var listPromise: ng.IPromise<T[]> = null;
 
                         if(dataValue){
-                            listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse));
+                            listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse), relationObject.queryOptions);
                         }
                         else {
-                            listPromise = relationStore.getMany(localKeyValues);
+                            listPromise = relationStore.getMany(localKeyValues, relationObject.queryOptions);
                         }
 
                         listPromise.then((relationModels) => {
 
-                            model[relationName] = relationModels;
+                            model[relationObject.relation] = relationModels;
                         });
 
                         promises.push(listPromise);

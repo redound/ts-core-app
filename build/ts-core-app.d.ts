@@ -73,29 +73,23 @@ declare module TSCore.App.Data {
         [name: string]: IModelRelationConfigInterface;
     }
     interface IModelRelationConfigInterface {
-        store?: string;
-        type?: ModelRelationType;
+        store: string;
+        type: ModelRelationType;
         localKey?: string;
-        foreignKey: string;
+        foreignKey?: string;
         dataKey?: string;
     }
     class Model extends TSCore.Data.Model {
-        protected _relationKeys: TSCore.Data.Dictionary<string, any>;
-        constructor(data?: {});
         static relations(): IModelRelationsInterface;
-        getRelation(name: string): ng.IPromise<any>;
-        getRelationStored(name: string): any;
-        addRelationKey(name: string, key: any): void;
-        addManyRelationKeys(name: string, keys: any[]): any;
-        setRelationKey(name: string, key: any): any;
-        removeRelationKey(name: string, key: any): void;
-        getManyRelationKeys(name: string): any[];
-        getRelationKey(name: string): any;
     }
 }
 declare module TSCore.App.Data {
     interface IModelQueryOptions {
-        include?: string[];
+        include?: IModelQueryOptionRelation[];
+    }
+    interface IModelQueryOptionRelation {
+        relation: string;
+        queryOptions?: IModelQueryOptions;
     }
     class RemoteModelStore<T extends Model> {
         protected $q: ng.IQService;
