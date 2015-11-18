@@ -16,7 +16,7 @@ module TSCore.App.Data {
         public store: TSCore.Data.ModelDictionary<any, T>;
 
         protected _loadedRequestConfigs: TSCore.Data.Collection<string> = new TSCore.Data.Collection<string>();
-        protected _pendingRequests: TSCore.Data.Dictionary<string, ng.IPromise<T>> = new TSCore.Data.Dictionary<string, ng.IPromise<T>>();
+        protected _pendingRequests: TSCore.Data.Dictionary<string, ng.IPromise<any>> = new TSCore.Data.Dictionary<string, ng.IPromise<any>>();
 
 
         public constructor(
@@ -40,10 +40,10 @@ module TSCore.App.Data {
             if(this._loadedRequestConfigs.contains(loadConfigString) && !fresh){
 
                 var models = this.store.values();
-                var promises: ng.IPromise[] = [];
+                var promises: ng.IPromise<T>[] = [];
 
                 _.each(models, (model) => {
-                    promises.push(this._processRelations(model, queryOptions));
+                    promises.push(this._processRelations(model, null, queryOptions));
                 });
 
                 return this.$q.all(promises);
@@ -75,10 +75,10 @@ module TSCore.App.Data {
 
             var loadConfigString = JSON.stringify(loadConfig);
 
-            if(this._loadedRequestConfigs.contains(loadConfigString) && !fresh){
+            if(((!queryOptions && this.store.contains(id)) || this._loadedRequestConfigs.contains(loadConfigString)) && !fresh){
 
                 var model = this.store.get(id);
-                return this._processRelations(model, queryOptions);
+                return this._processRelations(model, null, queryOptions);
             }
 
             if(this._pendingRequests.contains(loadConfigString)){
@@ -167,9 +167,9 @@ module TSCore.App.Data {
             return this.importOne(response.data, queryOptions);
         }
 
-        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T> {
+        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<any> {
 
-            var promises: ng.IPromise<T>[] = [];
+            var promises: ng.IPromise<any>[] = [];
             var includes = (queryOptions && queryOptions.include) || [];
             var model = _.clone(itemModel);
 
@@ -194,7 +194,7 @@ module TSCore.App.Data {
                         var getPromise: ng.IPromise<T> = null;
 
                         if(dataValue){
-                            getPromise = relationStore.importOne(dataValue);
+                            getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue));
                         }
                         else {
                             getPromise = relationStore.get(localKeyValue);
@@ -215,7 +215,7 @@ module TSCore.App.Data {
                         var listPromise: ng.IPromise<T[]> = null;
 
                         if(dataValue){
-                            listPromise = relationStore.importMany(dataValue);
+                            listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse));
                         }
                         else {
                             listPromise = relationStore.getMany(localKeyValues);

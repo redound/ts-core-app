@@ -300,7 +300,7 @@ var TSCore;
                         var models = this.store.values();
                         var promises = [];
                         _.each(models, function (model) {
-                            promises.push(_this._processRelations(model, queryOptions));
+                            promises.push(_this._processRelations(model, null, queryOptions));
                         });
                         return this.$q.all(promises);
                     }
@@ -322,9 +322,9 @@ var TSCore;
                         requestOptions: requestOptions
                     };
                     var loadConfigString = JSON.stringify(loadConfig);
-                    if (this._loadedRequestConfigs.contains(loadConfigString) && !fresh) {
+                    if (((!queryOptions && this.store.contains(id)) || this._loadedRequestConfigs.contains(loadConfigString)) && !fresh) {
                         var model = this.store.get(id);
-                        return this._processRelations(model, queryOptions);
+                        return this._processRelations(model, null, queryOptions);
                     }
                     if (this._pendingRequests.contains(loadConfigString)) {
                         return this._pendingRequests.get(loadConfigString);
@@ -402,7 +402,7 @@ var TSCore;
                                 var localKeyValue = model[localKey];
                                 var getPromise = null;
                                 if (dataValue) {
-                                    getPromise = relationStore.importOne(dataValue);
+                                    getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue));
                                 }
                                 else {
                                     getPromise = relationStore.get(localKeyValue);
@@ -416,7 +416,7 @@ var TSCore;
                                 var localKeyValues = _.isArray(model[localKey]) ? model[localKey] : [];
                                 var listPromise = null;
                                 if (dataValue) {
-                                    listPromise = relationStore.importMany(dataValue);
+                                    listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse));
                                 }
                                 else {
                                     listPromise = relationStore.getMany(localKeyValues);

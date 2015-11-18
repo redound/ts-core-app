@@ -1,5 +1,3 @@
-/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
-/// <reference path="../typings/tsd.d.ts" />
 declare module TSCore.App {
 }
 declare module TSCore.App.Auth {
@@ -107,7 +105,7 @@ declare module TSCore.App.Data {
         static $inject: string[];
         store: TSCore.Data.ModelDictionary<any, T>;
         protected _loadedRequestConfigs: TSCore.Data.Collection<string>;
-        protected _pendingRequests: TSCore.Data.Dictionary<string, ng.IPromise<T>>;
+        protected _pendingRequests: TSCore.Data.Dictionary<string, ng.IPromise<any>>;
         constructor($q: ng.IQService, $injector: any, endpoint: TSCore.App.Http.ApiEndpoint, modelClass: any);
         list(queryOptions?: IModelQueryOptions, requestOptions?: TSCore.App.Http.IApiRequest, fresh?: boolean): ng.IPromise<T[]>;
         get(id: any, queryOptions?: IModelQueryOptions, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
@@ -119,7 +117,7 @@ declare module TSCore.App.Data {
         importMany(data: any[], queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
         protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
         protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
-        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
+        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<any>;
     }
 }
 declare module TSCore.App.Http {
