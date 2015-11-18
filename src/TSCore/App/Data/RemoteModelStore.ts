@@ -48,7 +48,7 @@ module TSCore.App.Data {
                 var promises: ng.IPromise<T>[] = [];
 
                 _.each(models, (model) => {
-                    promises.push(this._processRelations(model, null, queryOptions));
+                    promises.push(this._composeModel(model, queryOptions));
                 });
 
                 return this.$q.all(promises);
@@ -80,10 +80,10 @@ module TSCore.App.Data {
 
             var loadConfigString = JSON.stringify(loadConfig);
 
-            if(((!queryOptions && this.store.contains(id)) || this._loadedRequestConfigs.contains(loadConfigString)) && !fresh){
+            if(this.queryCached(id, queryOptions) && !fresh){
 
                 var model = this.store.get(id);
-                return this._processRelations(model, null, queryOptions);
+                return this._composeModel(model, queryOptions);
             }
 
             if(this._pendingRequests.contains(loadConfigString)){
@@ -101,6 +101,60 @@ module TSCore.App.Data {
             this._pendingRequests.set(loadConfigString, promise);
 
             return promise;
+        }
+
+        public queryCached(id, queryOptions) {
+
+            if (!this.store.contains(id)) {
+                return false;
+            }
+
+            var itemModel = this.store.get(id);
+
+            var includes = (queryOptions && queryOptions.include) || [];
+
+            if(!includes.length) {
+                return true;
+            }
+
+            var oneNotInCache = false;
+
+            _.each(includes, (includeConfig: IModelQueryOptionRelation) => {
+
+                if(oneNotInCache){
+                    return;
+                }
+
+                var relationConfig = itemModel.static.relations()[includeConfig.relation];
+                var relationStore = this.$injector.get(relationConfig.store);
+                var localKey = relationConfig.localKey;
+
+                switch(relationConfig.type) {
+
+                    case ModelRelationType.ONE:
+
+                        var relationId = itemModel[localKey];
+
+                        if(!relationStore.queryCached(relationId, includeConfig.queryOptions)){
+                            oneNotInCache = true;
+                        }
+                        break;
+
+                    case ModelRelationType.MANY:
+
+                        var relationIds = itemModel[localKey];
+
+                        _.each(relationIds, (relationId) => {
+
+                            if(!relationStore.queryCached(relationId, includeConfig.queryOptions)){
+                                oneNotInCache = true;
+                            }
+                        });
+                        break;
+                }
+            });
+
+            return !oneNotInCache;
         }
 
         public getMany(ids: any[], userOptions?: any, requestOptions?:{}, fresh?:boolean): ng.IPromise<T[]> {
@@ -142,39 +196,46 @@ module TSCore.App.Data {
         }
 
 
-        public importOne(itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T> {
+        public importOne(itemData: any): T {
 
-            var createdItem = this.store.addData(itemData);
-            return this._processRelations(createdItem, itemData, queryOptions);
+            this._extractRelationData(itemData);
+
+            return this.store.addData(itemData);
         }
 
-        public importMany(data: any[], queryOptions?: IModelQueryOptions): ng.IPromise<T[]> {
-
-            this.store.addManyData(data);
-            var promises: ng.IPromise<T>[] = [];
+        public importMany(data: any[]): T[] {
 
             _.each(data, (itemData) => {
+                this._extractRelationData(itemData);
+            });
 
-                promises.push(this._processRelations(this.store.get(itemData[this.modelClass.primaryKey()]), itemData, queryOptions));
+            return this.store.addManyData(data);
+        }
+
+        protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T[]> {
+
+            var itemModels = this.importMany(response.data);
+
+            var promises: ng.IPromise<T>[] = [];
+
+            _.each(itemModels, (itemModel) => {
+                promises.push(this._composeModel(itemModel, queryOptions));
             });
 
             return this.$q.all(promises);
         }
 
-
-        protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T[]> {
-
-            return this.importMany(response.data, queryOptions);
-        }
-
         protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T> {
 
-            return this.importOne(response.data, queryOptions);
+            var itemModel = this.importOne(response.data);
+
+            return this._composeModel(itemModel, queryOptions);
         }
 
-        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<any> {
+        protected _composeModel(itemModel: T, queryOptions?: IModelQueryOptions): ng.IPromise<any> {
 
             var promises: ng.IPromise<any>[] = [];
+
             var includes = (queryOptions && queryOptions.include) || [];
             var model = _.clone(itemModel);
 
@@ -187,23 +248,13 @@ module TSCore.App.Data {
 
                 var relationStore: RemoteModelStore<any> = this.$injector.get(relationConfig.store);
                 var localKey = relationConfig.localKey;
-                var foreignKey = relationConfig.foreignKey || relationStore.modelClass.primaryKey();
-                var dataKey = relationConfig.dataKey;
-                var dataValue = dataKey && itemData ? itemData[dataKey] : null;
 
                 switch(relationConfig.type){
 
                     case ModelRelationType.ONE:
 
                         var localKeyValue = model[localKey];
-                        var getPromise: ng.IPromise<T> = null;
-
-                        if(dataValue){
-                            getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue), relationObject.queryOptions);
-                        }
-                        else {
-                            getPromise = relationStore.get(localKeyValue, relationObject.queryOptions);
-                        }
+                        var getPromise: ng.IPromise<T> = relationStore.get(localKeyValue, relationObject.queryOptions);
 
                         getPromise.then((relationModel) => {
 
@@ -217,14 +268,7 @@ module TSCore.App.Data {
                     case ModelRelationType.MANY:
 
                         var localKeyValues = _.isArray(model[localKey]) ? model[localKey] : [];
-                        var listPromise: ng.IPromise<T[]> = null;
-
-                        if(dataValue){
-                            listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse), relationObject.queryOptions);
-                        }
-                        else {
-                            listPromise = relationStore.getMany(localKeyValues, relationObject.queryOptions);
-                        }
+                        var listPromise: ng.IPromise<T[]> = relationStore.getMany(localKeyValues, relationObject.queryOptions);
 
                         listPromise.then((relationModels) => {
 
@@ -240,6 +284,32 @@ module TSCore.App.Data {
             return <ng.IPromise<T>>this.$q.all(promises).then(() => {
 
                 return model;
+            });
+        }
+
+        protected _extractRelationData(itemData) {
+
+            _.each(this.modelClass.relations(), (relationConfig: IModelRelationConfigInterface) => {
+
+                var dataKey = relationConfig.dataKey;
+                var dataValue = dataKey && itemData ? itemData[dataKey] : null;
+
+                if (!dataValue) {
+                    return;
+                }
+
+                var relationStore: RemoteModelStore<any> = this.$injector.get(relationConfig.store);
+
+                switch(relationConfig.type) {
+
+                    case ModelRelationType.ONE:
+                        relationStore.importOne(relationStore.endpoint.transformResponse(dataValue));
+                        break;
+
+                    case ModelRelationType.MANY:
+                        relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse));
+                        break;
+                }
             });
         }
     }

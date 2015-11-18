@@ -103,15 +103,17 @@ declare module TSCore.App.Data {
         constructor($q: ng.IQService, $injector: any, endpoint: TSCore.App.Http.ApiEndpoint, modelClass: any);
         list(queryOptions?: IModelQueryOptions, requestOptions?: TSCore.App.Http.IApiRequest, fresh?: boolean): ng.IPromise<T[]>;
         get(id: any, queryOptions?: IModelQueryOptions, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
+        queryCached(id: any, queryOptions: any): boolean;
         getMany(ids: any[], userOptions?: any, requestOptions?: {}, fresh?: boolean): ng.IPromise<T[]>;
         listStored(): T[];
         getStored(id: any): T;
         getManyStored(ids: any[]): T[];
-        importOne(itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
-        importMany(data: any[], queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
+        importOne(itemData: any): T;
+        importMany(data: any[]): T[];
         protected _processListResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T[]>;
         protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
-        protected _processRelations(itemModel: T, itemData: any, queryOptions?: IModelQueryOptions): ng.IPromise<any>;
+        protected _composeModel(itemModel: T, queryOptions?: IModelQueryOptions): ng.IPromise<any>;
+        protected _extractRelationData(itemData: any): void;
     }
 }
 declare module TSCore.App.Http {

@@ -212,7 +212,7 @@ var TSCore;
                         var models = this.store.values();
                         var promises = [];
                         _.each(models, function (model) {
-                            promises.push(_this._processRelations(model, null, queryOptions));
+                            promises.push(_this._composeModel(model, queryOptions));
                         });
                         return this.$q.all(promises);
                     }
@@ -234,9 +234,9 @@ var TSCore;
                         requestOptions: requestOptions
                     };
                     var loadConfigString = JSON.stringify(loadConfig);
-                    if (((!queryOptions && this.store.contains(id)) || this._loadedRequestConfigs.contains(loadConfigString)) && !fresh) {
+                    if (this.queryCached(id, queryOptions) && !fresh) {
                         var model = this.store.get(id);
-                        return this._processRelations(model, null, queryOptions);
+                        return this._composeModel(model, queryOptions);
                     }
                     if (this._pendingRequests.contains(loadConfigString)) {
                         return this._pendingRequests.get(loadConfigString);
@@ -248,6 +248,43 @@ var TSCore;
                     });
                     this._pendingRequests.set(loadConfigString, promise);
                     return promise;
+                };
+                RemoteModelStore.prototype.queryCached = function (id, queryOptions) {
+                    var _this = this;
+                    if (!this.store.contains(id)) {
+                        return false;
+                    }
+                    var itemModel = this.store.get(id);
+                    var includes = (queryOptions && queryOptions.include) || [];
+                    if (!includes.length) {
+                        return true;
+                    }
+                    var oneNotInCache = false;
+                    _.each(includes, function (includeConfig) {
+                        if (oneNotInCache) {
+                            return;
+                        }
+                        var relationConfig = itemModel.static.relations()[includeConfig.relation];
+                        var relationStore = _this.$injector.get(relationConfig.store);
+                        var localKey = relationConfig.localKey;
+                        switch (relationConfig.type) {
+                            case Data.ModelRelationType.ONE:
+                                var relationId = itemModel[localKey];
+                                if (!relationStore.queryCached(relationId, includeConfig.queryOptions)) {
+                                    oneNotInCache = true;
+                                }
+                                break;
+                            case Data.ModelRelationType.MANY:
+                                var relationIds = itemModel[localKey];
+                                _.each(relationIds, function (relationId) {
+                                    if (!relationStore.queryCached(relationId, includeConfig.queryOptions)) {
+                                        oneNotInCache = true;
+                                    }
+                                });
+                                break;
+                        }
+                    });
+                    return !oneNotInCache;
                 };
                 RemoteModelStore.prototype.getMany = function (ids, userOptions, requestOptions, fresh) {
                     var _this = this;
@@ -275,26 +312,31 @@ var TSCore;
                     });
                     return results;
                 };
-                RemoteModelStore.prototype.importOne = function (itemData, queryOptions) {
-                    var createdItem = this.store.addData(itemData);
-                    return this._processRelations(createdItem, itemData, queryOptions);
+                RemoteModelStore.prototype.importOne = function (itemData) {
+                    this._extractRelationData(itemData);
+                    return this.store.addData(itemData);
                 };
-                RemoteModelStore.prototype.importMany = function (data, queryOptions) {
+                RemoteModelStore.prototype.importMany = function (data) {
                     var _this = this;
-                    this.store.addManyData(data);
-                    var promises = [];
                     _.each(data, function (itemData) {
-                        promises.push(_this._processRelations(_this.store.get(itemData[_this.modelClass.primaryKey()]), itemData, queryOptions));
+                        _this._extractRelationData(itemData);
+                    });
+                    return this.store.addManyData(data);
+                };
+                RemoteModelStore.prototype._processListResponse = function (response, queryOptions) {
+                    var _this = this;
+                    var itemModels = this.importMany(response.data);
+                    var promises = [];
+                    _.each(itemModels, function (itemModel) {
+                        promises.push(_this._composeModel(itemModel, queryOptions));
                     });
                     return this.$q.all(promises);
                 };
-                RemoteModelStore.prototype._processListResponse = function (response, queryOptions) {
-                    return this.importMany(response.data, queryOptions);
-                };
                 RemoteModelStore.prototype._processGetResponse = function (response, queryOptions) {
-                    return this.importOne(response.data, queryOptions);
+                    var itemModel = this.importOne(response.data);
+                    return this._composeModel(itemModel, queryOptions);
                 };
-                RemoteModelStore.prototype._processRelations = function (itemModel, itemData, queryOptions) {
+                RemoteModelStore.prototype._composeModel = function (itemModel, queryOptions) {
                     var _this = this;
                     var promises = [];
                     var includes = (queryOptions && queryOptions.include) || [];
@@ -306,19 +348,10 @@ var TSCore;
                         }
                         var relationStore = _this.$injector.get(relationConfig.store);
                         var localKey = relationConfig.localKey;
-                        var foreignKey = relationConfig.foreignKey || relationStore.modelClass.primaryKey();
-                        var dataKey = relationConfig.dataKey;
-                        var dataValue = dataKey && itemData ? itemData[dataKey] : null;
                         switch (relationConfig.type) {
                             case Data.ModelRelationType.ONE:
                                 var localKeyValue = model[localKey];
-                                var getPromise = null;
-                                if (dataValue) {
-                                    getPromise = relationStore.importOne(relationStore.endpoint.transformResponse(dataValue), relationObject.queryOptions);
-                                }
-                                else {
-                                    getPromise = relationStore.get(localKeyValue, relationObject.queryOptions);
-                                }
+                                var getPromise = relationStore.get(localKeyValue, relationObject.queryOptions);
                                 getPromise.then(function (relationModel) {
                                     model[relationObject.relation] = relationModel;
                                 });
@@ -326,13 +359,7 @@ var TSCore;
                                 break;
                             case Data.ModelRelationType.MANY:
                                 var localKeyValues = _.isArray(model[localKey]) ? model[localKey] : [];
-                                var listPromise = null;
-                                if (dataValue) {
-                                    listPromise = relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse), relationObject.queryOptions);
-                                }
-                                else {
-                                    listPromise = relationStore.getMany(localKeyValues, relationObject.queryOptions);
-                                }
+                                var listPromise = relationStore.getMany(localKeyValues, relationObject.queryOptions);
                                 listPromise.then(function (relationModels) {
                                     model[relationObject.relation] = relationModels;
                                 });
@@ -342,6 +369,25 @@ var TSCore;
                     });
                     return this.$q.all(promises).then(function () {
                         return model;
+                    });
+                };
+                RemoteModelStore.prototype._extractRelationData = function (itemData) {
+                    var _this = this;
+                    _.each(this.modelClass.relations(), function (relationConfig) {
+                        var dataKey = relationConfig.dataKey;
+                        var dataValue = dataKey && itemData ? itemData[dataKey] : null;
+                        if (!dataValue) {
+                            return;
+                        }
+                        var relationStore = _this.$injector.get(relationConfig.store);
+                        switch (relationConfig.type) {
+                            case Data.ModelRelationType.ONE:
+                                relationStore.importOne(relationStore.endpoint.transformResponse(dataValue));
+                                break;
+                            case Data.ModelRelationType.MANY:
+                                relationStore.importMany(_.map(dataValue, relationStore.endpoint.transformResponse));
+                                break;
+                        }
                     });
                 };
                 RemoteModelStore.$inject = ['$q', '$injector'];
