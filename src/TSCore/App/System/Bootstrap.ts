@@ -24,6 +24,10 @@ module TSCore.App.System {
             return [];
         }
 
+        protected getFilters(): {}|any[] {
+            return [];
+        }
+
         protected getControllers(): {}|any[] {
             return [];
         }
@@ -72,6 +76,13 @@ module TSCore.App.System {
 
             _.each(<_.Dictionary<{}>>factories, (value: any, name) => {
                 this._module.factory(name, value);
+            });
+
+            // Filters
+            var filters = this.getFilters();
+
+            _.each(<_.Dictionary<{}>>filters, (value: any, name) => {
+                this._module.filter(name, value);
             });
 
             // Controllers

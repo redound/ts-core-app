@@ -698,6 +698,9 @@ var TSCore;
                 Bootstrap.prototype.getFactories = function () {
                     return [];
                 };
+                Bootstrap.prototype.getFilters = function () {
+                    return [];
+                };
                 Bootstrap.prototype.getControllers = function () {
                     return [];
                 };
@@ -731,6 +734,10 @@ var TSCore;
                     var factories = this.getFactories();
                     _.each(factories, function (value, name) {
                         _this._module.factory(name, value);
+                    });
+                    var filters = this.getFilters();
+                    _.each(filters, function (value, name) {
+                        _this._module.filter(name, value);
                     });
                     var controllers = this.getControllers();
                     _.each(controllers, function (value, name) {

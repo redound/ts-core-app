@@ -256,6 +256,7 @@ declare module TSCore.App.System {
         protected getConfigs(): any[];
         protected getServices(): {} | any[];
         protected getFactories(): {} | any[];
+        protected getFilters(): {} | any[];
         protected getControllers(): {} | any[];
         protected getDirectives(): {} | any[];
         protected getRuns(): any[];
