@@ -58,6 +58,10 @@ module TSCore.App.Data {
                 return this._pendingRequests.get(loadConfigString);
             }
 
+            if(fresh){
+                requestOptions = _.defaults(requestOptions || {}, { cache: false });
+            }
+
             var promise = <ng.IPromise<T[]>>this.endpoint.list(queryOptions, requestOptions).then((response: TSCore.App.Http.IApiEndpointResponse) => {
 
                 this._loadedRequestConfigs.add(loadConfigString);
@@ -90,6 +94,10 @@ module TSCore.App.Data {
                 return this._pendingRequests.get(loadConfigString);
             }
 
+            if(fresh){
+                requestOptions = _.defaults(requestOptions || {}, { cache: false });
+            }
+
             var promise = <ng.IPromise<T>>this.endpoint.get(id, queryOptions, requestOptions).then((response: TSCore.App.Http.IApiEndpointResponse) => {
 
                 this._loadedRequestConfigs.add(loadConfigString);
@@ -102,6 +110,43 @@ module TSCore.App.Data {
 
             return promise;
         }
+
+        public create(model: T, requestOptions?:{}): ng.IPromise<T> {
+
+            return this.endpoint.create(model.toObject(false), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
+
+                var resultModel = model;
+
+                if(response.data){
+                    resultModel = this.importOne(response.data);
+                }
+                else {
+                    this.store.set(model[this.modelClass.primaryKey()], model);
+                }
+
+                return resultModel;
+            });
+        }
+
+        public update(model: T, requestOptions?:{}): ng.IPromise<T> {
+
+            var modelId = model[this.modelClass.primaryKey()];
+
+            return this.endpoint.update(modelId, model.toObject(false), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
+
+                var resultModel = model;
+
+                if(response.data){
+                    resultModel = this.importOne(model);
+                }
+                else {
+                    this.store.set(model[this.modelClass.primaryKey()], model);
+                }
+
+                return resultModel;
+            });
+        }
+
 
         public queryCached(id, queryOptions) {
 

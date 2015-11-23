@@ -28,5 +28,22 @@ module TSCore.App.Data {
         public static relations(): IModelRelationsInterface {
             return {};
         }
+
+        public toObject(includeRelations: boolean = true) {
+
+            var result = super.toObject();
+
+            if(includeRelations === false) {
+
+                _.each(_.keys(this.static.relations()), (key:string) => {
+
+                    if (result[key]) {
+                        delete result[key];
+                    }
+                });
+            }
+
+            return result;
+        }
     }
 }

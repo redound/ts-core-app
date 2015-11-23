@@ -43,12 +43,12 @@ module TSCore.App.Http {
 
         public postRequest(path: string, urlParams: {}, data: {}, options?: IApiRequest, extraOptions?: IApiRequest): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
-            return this.request(Method.POST, path, urlParams, _.defaults(options, { data: data }), extraOptions);
+            return this.request(Method.POST, path, urlParams, _.defaults(options || {}, { data: data }), extraOptions);
         }
 
         public putRequest(path: string, urlParams: {}, data: {}, options?: IApiRequest, extraOptions?: IApiRequest): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
-            return this.request(Method.PUT, path, urlParams, _.defaults(options, { data: data }), extraOptions);
+            return this.request(Method.PUT, path, urlParams, _.defaults(options || {}, { data: data }), extraOptions);
         }
 
         public deleteRequest(path: string, urlParams: {}, options?: IApiRequest, extraOptions?: IApiRequest): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
@@ -67,7 +67,7 @@ module TSCore.App.Http {
             return this.getRequest('/:id', { id: id }, requestOptions).then(this.extractSingleCallback);
         }
 
-        public save(id: number, data: {}, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse> {
+        public update(id: number, data: {}, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse> {
 
             return this.putRequest('/:id', { id: id }, data, requestOptions).then(this.extractSingleCallback);
         }

@@ -81,6 +81,7 @@ declare module TSCore.App.Data {
     }
     class Model extends TSCore.Data.Model {
         static relations(): IModelRelationsInterface;
+        toObject(includeRelations?: boolean): {};
     }
 }
 declare module TSCore.App.Data {
@@ -103,6 +104,8 @@ declare module TSCore.App.Data {
         constructor($q: ng.IQService, $injector: any, endpoint: TSCore.App.Http.ApiEndpoint, modelClass: any);
         list(queryOptions?: IModelQueryOptions, requestOptions?: TSCore.App.Http.IApiRequest, fresh?: boolean): ng.IPromise<T[]>;
         get(id: any, queryOptions?: IModelQueryOptions, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
+        create(model: T, requestOptions?: {}): ng.IPromise<T>;
+        update(model: T, requestOptions?: {}): ng.IPromise<T>;
         queryCached(id: any, queryOptions: any): boolean;
         getMany(ids: any[], userOptions?: any, requestOptions?: {}, fresh?: boolean): ng.IPromise<T[]>;
         listStored(): T[];
@@ -170,7 +173,7 @@ declare module TSCore.App.Http {
         deleteRequest(path: string, urlParams: {}, options?: IApiRequest, extraOptions?: IApiRequest): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
         list(userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
         get(id: number, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
-        save(id: number, data: {}, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
+        update(id: number, data: {}, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
         create(data: {}, userOptions?: any, requestOptions?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
         delete(id: number, userOptions?: any, options?: IApiRequest): ng.IPromise<IApiEndpointResponse>;
         extractMultiple(response: ng.IHttpPromiseCallbackArg<{}>): IApiEndpointResponse;

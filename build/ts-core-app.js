@@ -180,6 +180,18 @@ var TSCore;
                 Model.relations = function () {
                     return {};
                 };
+                Model.prototype.toObject = function (includeRelations) {
+                    if (includeRelations === void 0) { includeRelations = true; }
+                    var result = _super.prototype.toObject.call(this);
+                    if (includeRelations === false) {
+                        _.each(_.keys(this.static.relations()), function (key) {
+                            if (result[key]) {
+                                delete result[key];
+                            }
+                        });
+                    }
+                    return result;
+                };
                 return Model;
             })(TSCore.Data.Model);
             Data.Model = Model;
@@ -219,6 +231,9 @@ var TSCore;
                     if (this._pendingRequests.contains(loadConfigString)) {
                         return this._pendingRequests.get(loadConfigString);
                     }
+                    if (fresh) {
+                        requestOptions = _.defaults(requestOptions || {}, { cache: false });
+                    }
                     var promise = this.endpoint.list(queryOptions, requestOptions).then(function (response) {
                         _this._loadedRequestConfigs.add(loadConfigString);
                         _this._pendingRequests.remove(loadConfigString);
@@ -241,6 +256,9 @@ var TSCore;
                     if (this._pendingRequests.contains(loadConfigString)) {
                         return this._pendingRequests.get(loadConfigString);
                     }
+                    if (fresh) {
+                        requestOptions = _.defaults(requestOptions || {}, { cache: false });
+                    }
                     var promise = this.endpoint.get(id, queryOptions, requestOptions).then(function (response) {
                         _this._loadedRequestConfigs.add(loadConfigString);
                         _this._pendingRequests.remove(loadConfigString);
@@ -248,6 +266,33 @@ var TSCore;
                     });
                     this._pendingRequests.set(loadConfigString, promise);
                     return promise;
+                };
+                RemoteModelStore.prototype.create = function (model, requestOptions) {
+                    var _this = this;
+                    return this.endpoint.create(model.toObject(false), requestOptions).then(function (response) {
+                        var resultModel = model;
+                        if (response.data) {
+                            resultModel = _this.importOne(response.data);
+                        }
+                        else {
+                            _this.store.set(model[_this.modelClass.primaryKey()], model);
+                        }
+                        return resultModel;
+                    });
+                };
+                RemoteModelStore.prototype.update = function (model, requestOptions) {
+                    var _this = this;
+                    var modelId = model[this.modelClass.primaryKey()];
+                    return this.endpoint.update(modelId, model.toObject(false), requestOptions).then(function (response) {
+                        var resultModel = model;
+                        if (response.data) {
+                            resultModel = _this.importOne(model);
+                        }
+                        else {
+                            _this.store.set(model[_this.modelClass.primaryKey()], model);
+                        }
+                        return resultModel;
+                    });
                 };
                 RemoteModelStore.prototype.queryCached = function (id, queryOptions) {
                     var _this = this;
@@ -493,10 +538,10 @@ var TSCore;
                     return this.request(Http.Method.GET, path, urlParams, options, extraOptions);
                 };
                 ApiEndpoint.prototype.postRequest = function (path, urlParams, data, options, extraOptions) {
-                    return this.request(Http.Method.POST, path, urlParams, _.defaults(options, { data: data }), extraOptions);
+                    return this.request(Http.Method.POST, path, urlParams, _.defaults(options || {}, { data: data }), extraOptions);
                 };
                 ApiEndpoint.prototype.putRequest = function (path, urlParams, data, options, extraOptions) {
-                    return this.request(Http.Method.PUT, path, urlParams, _.defaults(options, { data: data }), extraOptions);
+                    return this.request(Http.Method.PUT, path, urlParams, _.defaults(options || {}, { data: data }), extraOptions);
                 };
                 ApiEndpoint.prototype.deleteRequest = function (path, urlParams, options, extraOptions) {
                     return this.request(Http.Method.DELETE, path, urlParams, options, extraOptions);
@@ -507,7 +552,7 @@ var TSCore;
                 ApiEndpoint.prototype.get = function (id, userOptions, requestOptions) {
                     return this.getRequest('/:id', { id: id }, requestOptions).then(this.extractSingleCallback);
                 };
-                ApiEndpoint.prototype.save = function (id, data, userOptions, requestOptions) {
+                ApiEndpoint.prototype.update = function (id, data, userOptions, requestOptions) {
                     return this.putRequest('/:id', { id: id }, data, requestOptions).then(this.extractSingleCallback);
                 };
                 ApiEndpoint.prototype.create = function (data, userOptions, requestOptions) {
