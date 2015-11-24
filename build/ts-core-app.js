@@ -269,7 +269,7 @@ var TSCore;
                 };
                 RemoteModelStore.prototype.create = function (model, requestOptions) {
                     var _this = this;
-                    return this.endpoint.create(model.toObject(false), requestOptions).then(function (response) {
+                    return this.endpoint.create(this.endpoint.transformRequest(model.toObject(false)), requestOptions).then(function (response) {
                         var resultModel = model;
                         if (response.data) {
                             resultModel = _this.importOne(response.data);
@@ -283,7 +283,7 @@ var TSCore;
                 RemoteModelStore.prototype.update = function (model, requestOptions) {
                     var _this = this;
                     var modelId = model[this.modelClass.primaryKey()];
-                    return this.endpoint.update(modelId, model.toObject(false), requestOptions).then(function (response) {
+                    return this.endpoint.update(modelId, this.endpoint.transformRequest(model.toObject(false)), requestOptions).then(function (response) {
                         var resultModel = model;
                         if (response.data) {
                             resultModel = _this.importOne(model);
@@ -481,11 +481,11 @@ var TSCore;
                     _.each(this.defaultHeaders, function (value, name) {
                         options.headers[name] = value;
                     });
-                    options.url = this._buildUrl(options.url);
+                    options.url = this.buildUrl(options.url);
                     options.url = this._interpolateUrl(options.url, options.urlParams || {});
                     return options;
                 };
-                Api.prototype._buildUrl = function (relativeUrl) {
+                Api.prototype.buildUrl = function (relativeUrl) {
                     return this.protocol + this.hostname + relativeUrl;
                 };
                 Api.prototype._interpolateUrl = function (url, params) {
@@ -576,6 +576,9 @@ var TSCore;
                     };
                 };
                 ApiEndpoint.prototype.transformResponse = function (item) {
+                    return item;
+                };
+                ApiEndpoint.prototype.transformRequest = function (item) {
                     return item;
                 };
                 ApiEndpoint.$inject = ['apiService'];

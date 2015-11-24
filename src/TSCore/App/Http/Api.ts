@@ -55,13 +55,13 @@ module TSCore.App.Http {
             _.each(this.defaultHeaders, (value, name) => {
                 options.headers[name] = value;
             });
-            options.url = this._buildUrl(options.url);
+            options.url = this.buildUrl(options.url);
             options.url = this._interpolateUrl(options.url, options.urlParams || {});
 
             return options;
         }
 
-        private _buildUrl(relativeUrl:string) {
+        public buildUrl(relativeUrl:string) {
             return this.protocol + this.hostname + relativeUrl;
         }
 

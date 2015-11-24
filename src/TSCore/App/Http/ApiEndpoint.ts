@@ -104,5 +104,9 @@ module TSCore.App.Http {
         public transformResponse(item) {
             return item;
         }
+
+        public transformRequest(item){
+            return item;
+        }
     }
 }

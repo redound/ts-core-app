@@ -145,7 +145,7 @@ declare module TSCore.App.Http {
         unsetDefaultHeader(name: any): void;
         request(options: IApiRequest, userOptions: IApiRequest): ng.IHttpPromise<any>;
         private _parseOptions(options);
-        private _buildUrl(relativeUrl);
+        buildUrl(relativeUrl: string): string;
         private _interpolateUrl(url, params);
         private _popFirstKey(source, key);
         private _popKey(object, key);
@@ -179,6 +179,7 @@ declare module TSCore.App.Http {
         extractMultiple(response: ng.IHttpPromiseCallbackArg<{}>): IApiEndpointResponse;
         extractSingle(response: ng.IHttpPromiseCallbackArg<{}>): IApiEndpointResponse;
         transformResponse(item: any): any;
+        transformRequest(item: any): any;
     }
 }
 declare module TSCore.App.Interceptors {

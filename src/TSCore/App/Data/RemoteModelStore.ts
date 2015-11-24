@@ -113,7 +113,7 @@ module TSCore.App.Data {
 
         public create(model: T, requestOptions?:{}): ng.IPromise<T> {
 
-            return this.endpoint.create(model.toObject(false), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
+            return this.endpoint.create(this.endpoint.transformRequest(model.toObject(false)), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
 
                 var resultModel = model;
 
@@ -132,7 +132,7 @@ module TSCore.App.Data {
 
             var modelId = model[this.modelClass.primaryKey()];
 
-            return this.endpoint.update(modelId, model.toObject(false), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
+            return this.endpoint.update(modelId, this.endpoint.transformRequest(model.toObject(false)), requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
 
                 var resultModel = model;
 
