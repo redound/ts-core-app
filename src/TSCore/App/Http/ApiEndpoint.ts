@@ -85,19 +85,31 @@ module TSCore.App.Http {
 
         public extractMultiple(response: ng.IHttpPromiseCallbackArg<{}>): IApiEndpointResponse {
 
+            var data = null;
+
+            if(response.data[this.multipleProperty]){
+                data = _.map(response.data[this.multipleProperty], this.transformResponse);
+            }
+
             return {
                 response: response,
                 fullData: response.data,
-                data: _.map(response.data[this.multipleProperty], this.transformResponse)
+                data: data
             }
         }
 
         public extractSingle(response: ng.IHttpPromiseCallbackArg<{}>): IApiEndpointResponse {
 
+            var data = null;
+
+            if(response.data[this.singleProperty]){
+                data = this.transformResponse(response.data[this.singleProperty]);
+            }
+
             return {
                 response: response,
                 fullData: response.data,
-                data: this.transformResponse(response.data[this.singleProperty])
+                data: data
             }
         }
 

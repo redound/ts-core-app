@@ -294,6 +294,12 @@ var TSCore;
                         return resultModel;
                     });
                 };
+                RemoteModelStore.prototype.delete = function (modelId, requestOptions) {
+                    var _this = this;
+                    return this.endpoint.delete(modelId, requestOptions).then(function (response) {
+                        _this.store.remove(modelId);
+                    });
+                };
                 RemoteModelStore.prototype.queryCached = function (id, queryOptions) {
                     var _this = this;
                     if (!this.store.contains(id)) {
@@ -562,17 +568,25 @@ var TSCore;
                     return this.deleteRequest('/:id', { id: id }, options).then(this.extractSingleCallback);
                 };
                 ApiEndpoint.prototype.extractMultiple = function (response) {
+                    var data = null;
+                    if (response.data[this.multipleProperty]) {
+                        data = _.map(response.data[this.multipleProperty], this.transformResponse);
+                    }
                     return {
                         response: response,
                         fullData: response.data,
-                        data: _.map(response.data[this.multipleProperty], this.transformResponse)
+                        data: data
                     };
                 };
                 ApiEndpoint.prototype.extractSingle = function (response) {
+                    var data = null;
+                    if (response.data[this.singleProperty]) {
+                        data = this.transformResponse(response.data[this.singleProperty]);
+                    }
                     return {
                         response: response,
                         fullData: response.data,
-                        data: this.transformResponse(response.data[this.singleProperty])
+                        data: data
                     };
                 };
                 ApiEndpoint.prototype.transformResponse = function (item) {

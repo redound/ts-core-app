@@ -147,6 +147,14 @@ module TSCore.App.Data {
             });
         }
 
+        public delete(modelId: any, requestOptions?: {}): ng.IPromise<void> {
+
+            return this.endpoint.delete(modelId, requestOptions).then((response:  TSCore.App.Http.IApiEndpointResponse) => {
+
+                this.store.remove(modelId);
+            });
+        }
+
 
         public queryCached(id, queryOptions) {
 

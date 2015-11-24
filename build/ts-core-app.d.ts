@@ -106,6 +106,7 @@ declare module TSCore.App.Data {
         get(id: any, queryOptions?: IModelQueryOptions, requestOptions?: {}, fresh?: boolean): ng.IPromise<T>;
         create(model: T, requestOptions?: {}): ng.IPromise<T>;
         update(model: T, requestOptions?: {}): ng.IPromise<T>;
+        delete(modelId: any, requestOptions?: {}): ng.IPromise<void>;
         queryCached(id: any, queryOptions: any): boolean;
         getMany(ids: any[], userOptions?: any, requestOptions?: {}, fresh?: boolean): ng.IPromise<T[]>;
         listStored(): T[];
