@@ -118,8 +118,14 @@ module TSCore.App.System {
 
             if(this.run){
 
-                var runConfig: any[] = this.$runInject || [];
-                runConfig.push(_.bind(this.run, this));
+                var dependencies: any = this.$runInject || [];
+
+                var self = this;
+                var block = function() {
+                    return new (Function.prototype.bind.apply(self.run, self._parseArgs(arguments)));
+                };
+
+                var runConfig = dependencies.concat([block]);
 
                 this._module.run(runConfig);
             }
