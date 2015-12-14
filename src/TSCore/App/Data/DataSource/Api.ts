@@ -4,38 +4,36 @@ module TSCore.App.Data.DataSource {
     import Dictionary = TSCore.Data.Dictionary;
     import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
 
-    export class Memory implements IDataSource {
-
-        protected _store: Dictionary<any, any> = new Dictionary<any, any>();
+    export class Api implements IDataSource {
 
         get(query: DataQuery): ng.IPromise<DataResultSet>
         {
-            throw 'MemoryDataSource - Get - Not implemented yet';
+            throw 'ApiDatasource - Get - Not implemented yet';
         }
 
         create(key: any, value: any): ng.IPromise<any>
         {
-            throw 'MemoryDataSource - Create - Not implemented yet';
+            throw 'ApiDatasource - Create - Not implemented yet';
         }
 
         update(key: any, value: any): ng.IPromise<any>
         {
-            throw 'MemoryDataSource - Update - Not implemented yet';
+            throw 'ApiDatasource - Update - Not implemented yet';
         }
 
         remove(key: any): ng.IPromise<any>
         {
-            throw 'MemoryDataSource - Remove - Not implemented yet';
+            throw 'ApiDatasource - Remove - Not implemented yet';
         }
 
         clear(): ng.IPromise<any>
         {
-            throw 'MemoryDataSource - Clear - Not implemented yet';
+            throw 'ApiDatasource - Clear - Not implemented yet';
         }
 
         importResultSet(resultSet: DataResultSet)
         {
-            throw 'MemoryDataSource - ImportResultSet - Not implemented yet';
+            throw 'ApiDatasource - ImportResultSet - Not implemented yet';
         }
     }
 }

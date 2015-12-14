@@ -155,6 +155,80 @@ var TSCore;
         })(Auth = App.Auth || (App.Auth = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var DataSource;
+            (function (DataSource) {
+                var Api = (function () {
+                    function Api() {
+                    }
+                    Api.prototype.get = function (query) {
+                        throw 'ApiDatasource - Get - Not implemented yet';
+                    };
+                    Api.prototype.create = function (key, value) {
+                        throw 'ApiDatasource - Create - Not implemented yet';
+                    };
+                    Api.prototype.update = function (key, value) {
+                        throw 'ApiDatasource - Update - Not implemented yet';
+                    };
+                    Api.prototype.remove = function (key) {
+                        throw 'ApiDatasource - Remove - Not implemented yet';
+                    };
+                    Api.prototype.clear = function () {
+                        throw 'ApiDatasource - Clear - Not implemented yet';
+                    };
+                    Api.prototype.importResultSet = function (resultSet) {
+                        throw 'ApiDatasource - ImportResultSet - Not implemented yet';
+                    };
+                    return Api;
+                })();
+                DataSource.Api = Api;
+            })(DataSource = Data.DataSource || (Data.DataSource = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var DataSource;
+            (function (DataSource) {
+                var Dictionary = TSCore.Data.Dictionary;
+                var Memory = (function () {
+                    function Memory() {
+                        this._store = new Dictionary();
+                    }
+                    Memory.prototype.get = function (query) {
+                        throw 'MemoryDataSource - Get - Not implemented yet';
+                    };
+                    Memory.prototype.create = function (key, value) {
+                        throw 'MemoryDataSource - Create - Not implemented yet';
+                    };
+                    Memory.prototype.update = function (key, value) {
+                        throw 'MemoryDataSource - Update - Not implemented yet';
+                    };
+                    Memory.prototype.remove = function (key) {
+                        throw 'MemoryDataSource - Remove - Not implemented yet';
+                    };
+                    Memory.prototype.clear = function () {
+                        throw 'MemoryDataSource - Clear - Not implemented yet';
+                    };
+                    Memory.prototype.importResultSet = function (resultSet) {
+                        throw 'MemoryDataSource - ImportResultSet - Not implemented yet';
+                    };
+                    return Memory;
+                })();
+                DataSource.Memory = Memory;
+            })(DataSource = Data.DataSource || (Data.DataSource = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -195,6 +269,245 @@ var TSCore;
                 return Model;
             })(TSCore.Data.Model);
             Data.Model = Model;
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                var Exception = TSCore.Exception.Exception;
+                (function (ConditionOperator) {
+                    ConditionOperator[ConditionOperator["EQUALS"] = 0] = "EQUALS";
+                    ConditionOperator[ConditionOperator["NOT_EQUALS"] = 1] = "NOT_EQUALS";
+                    ConditionOperator[ConditionOperator["GREATER_THAN"] = 2] = "GREATER_THAN";
+                    ConditionOperator[ConditionOperator["GREATER_THAN_EQUALS"] = 3] = "GREATER_THAN_EQUALS";
+                    ConditionOperator[ConditionOperator["LESS_THAN"] = 4] = "LESS_THAN";
+                    ConditionOperator[ConditionOperator["LESS_THAN_EQUALS"] = 5] = "LESS_THAN_EQUALS";
+                })(Query.ConditionOperator || (Query.ConditionOperator = {}));
+                var ConditionOperator = Query.ConditionOperator;
+                var Condition = (function (_super) {
+                    __extends(Condition, _super);
+                    function Condition(property, operator, value) {
+                        _super.call(this);
+                        this._property = property;
+                        this._operator = operator;
+                        this._value = value;
+                    }
+                    Condition.prototype.getProperty = function () {
+                        return this._property;
+                    };
+                    Condition.prototype.getOperator = function () {
+                        return this._operator;
+                    };
+                    Condition.prototype.getValue = function () {
+                        return this._value;
+                    };
+                    Condition.parse = function (conditionString) {
+                        var conditionParts = conditionString.split(' ');
+                        if (conditionParts.length != 3) {
+                            throw new Exception('Condition "' + conditionString + '" invalid');
+                        }
+                        var property = conditionParts.shift().trim();
+                        var operatorRaw = conditionParts.shift().trim();
+                        var valueRaw = conditionParts.join(' ').trim();
+                        var operator = null;
+                        switch (operatorRaw) {
+                            case '===':
+                            case '==':
+                                operator = ConditionOperator.EQUALS;
+                                break;
+                            case '<>':
+                            case '!==':
+                            case '!=':
+                                operator = ConditionOperator.NOT_EQUALS;
+                                break;
+                            case '>':
+                                operator = ConditionOperator.GREATER_THAN;
+                                break;
+                            case '>=':
+                                operator = ConditionOperator.GREATER_THAN_EQUALS;
+                                break;
+                            case '<':
+                                operator = ConditionOperator.LESS_THAN;
+                                break;
+                            case '<=':
+                                operator = ConditionOperator.LESS_THAN_EQUALS;
+                                break;
+                        }
+                        if (operator === null) {
+                            throw new Exception('Condition "' + conditionString + '" contains invalid operator: "' + operatorRaw + '"');
+                        }
+                        var value = null;
+                        var stringValue = this.VALUE_REGEX.test(valueRaw) ? valueRaw.substring(1, valueRaw.length - 1) : null;
+                        var numberValue = parseInt(valueRaw);
+                        if (valueRaw.toUpperCase() == 'NULL') {
+                            value = null;
+                        }
+                        else if (stringValue) {
+                            value = stringValue;
+                        }
+                        else if (!_.isNaN(numberValue)) {
+                            value = numberValue;
+                        }
+                        else {
+                            throw new Exception('Condition "' + conditionString + '" contains invalid formatted value: "' + valueRaw + '"');
+                        }
+                        return new Condition(property, operator, value);
+                    };
+                    Condition.VALUE_REGEX = /^["|'](?:[^("|')\\]|\\.)*["|']$/;
+                    return Condition;
+                })(TSCore.BaseObject);
+                Query.Condition = Condition;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                var DataQuery = (function (_super) {
+                    __extends(DataQuery, _super);
+                    function DataQuery() {
+                        _super.apply(this, arguments);
+                    }
+                    DataQuery.prototype.find = function (id) {
+                        this._itemId = id;
+                        return this;
+                    };
+                    DataQuery.prototype.getItemId = function () {
+                        return this._itemId;
+                    };
+                    DataQuery.prototype.withRelationConstraint = function (model, itemId) {
+                        this._relationConstraints.add({
+                            model: model,
+                            itemId: itemId
+                        });
+                        return this;
+                    };
+                    DataQuery.prototype.getRelationConstraints = function () {
+                        return this._relationConstraints.clone();
+                    };
+                    return DataQuery;
+                })(TSCore.BaseObject);
+                Query.DataQuery = DataQuery;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                var Collection = TSCore.Data.Collection;
+                var List = TSCore.Data.List;
+                var Dictionary = TSCore.Data.Dictionary;
+                var Exception = TSCore.Exception.Exception;
+                var ModelQuery = (function (_super) {
+                    __extends(ModelQuery, _super);
+                    function ModelQuery() {
+                        _super.call(this);
+                        this._includes = new Collection();
+                        this._conditions = new List();
+                        this._options = new Dictionary();
+                    }
+                    ModelQuery.prototype.from = function (repository) {
+                        this._repository = repository;
+                        return this;
+                    };
+                    ModelQuery.prototype.getFrom = function () {
+                        return this._repository;
+                    };
+                    ModelQuery.prototype.find = function (id) {
+                        this._itemId = id;
+                        return this;
+                    };
+                    ModelQuery.prototype.getItemId = function () {
+                        return this._itemId;
+                    };
+                    ModelQuery.prototype.condition = function (condition) {
+                        this._conditions.add(condition);
+                        return this;
+                    };
+                    ModelQuery.prototype.getConditions = function () {
+                        return this._conditions.clone();
+                    };
+                    ModelQuery.prototype.where = function (conditions, bind) {
+                        var _this = this;
+                        var conditionParts = conditions.split(' AND ');
+                        _.each(conditionParts, function (conditionItem) {
+                            var resolvedCondition = _this._resolveTokens(conditionItem.trim(), bind);
+                            _this.condition(Query.Condition.parse(resolvedCondition));
+                        });
+                        return this;
+                    };
+                    ModelQuery.prototype.having = function (values) {
+                        var _this = this;
+                        _.each(values, function (value, key) {
+                            _this.condition(new Query.Condition(key, Query.ConditionOperator.EQUALS, value));
+                        });
+                        return this;
+                    };
+                    ModelQuery.prototype.include = function () {
+                        var args = [];
+                        for (var _i = 0; _i < arguments.length; _i++) {
+                            args[_i - 0] = arguments[_i];
+                        }
+                        this._includes.addMany(args);
+                        return this;
+                    };
+                    ModelQuery.prototype.getIncludes = function () {
+                        return this._includes.clone();
+                    };
+                    ModelQuery.prototype.option = function (key, value) {
+                        this._options.set(key, value);
+                        return this;
+                    };
+                    ModelQuery.prototype.getOptions = function () {
+                        return this._options.clone();
+                    };
+                    ModelQuery.prototype.execute = function () {
+                        if (!this._repository) {
+                            throw new Exception('Cannot execute query, unknown repository (from)');
+                        }
+                        return this._repository.get(this);
+                    };
+                    ModelQuery.prototype.executeSingle = function () {
+                        if (!this._repository) {
+                            throw new Exception('Cannot execute query, unknown repository (from)');
+                        }
+                        return this._repository.getFirst(this);
+                    };
+                    ModelQuery.prototype._resolveTokens = function (input, tokens) {
+                        return input.replace(/:([^:]+):/g, function (token) {
+                            var strippedToken = token.substring(1, token.length - 1);
+                            var tokenValue = tokens[strippedToken];
+                            if (_.isNull(tokenValue) || _.isNaN(tokenValue) || _.isUndefined(tokenValue)) {
+                                return 'NULL';
+                            }
+                            else if (_.isNumber(tokenValue)) {
+                                return tokenValue;
+                            }
+                            return "'" + tokenValue + "'";
+                        });
+                    };
+                    return ModelQuery;
+                })(TSCore.BaseObject);
+                Query.ModelQuery = ModelQuery;
+            })(Query = Data.Query || (Data.Query = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
@@ -445,6 +758,140 @@ var TSCore;
                 return RemoteModelStore;
             })();
             Data.RemoteModelStore = RemoteModelStore;
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var ModelQuery = TSCore.App.Data.Query.ModelQuery;
+            var List = TSCore.Data.List;
+            var Exception = TSCore.Exception.Exception;
+            var Repository = (function (_super) {
+                __extends(Repository, _super);
+                function Repository($q, $injector) {
+                    _super.call(this);
+                    this.$q = $q;
+                    this.$injector = $injector;
+                    this.dataSources = new List();
+                }
+                Repository.prototype.addDataSource = function (dataSource) {
+                    this.dataSources.add(dataSource);
+                };
+                Repository.prototype.removeDataSource = function (dataSource) {
+                    this.dataSources.remove(dataSource);
+                };
+                Repository.prototype.query = function () {
+                    return new ModelQuery().from(this);
+                };
+                Repository.prototype.allQuery = function () {
+                    return this.query();
+                };
+                Repository.prototype.all = function () {
+                    return this.allQuery().execute();
+                };
+                Repository.prototype.findQuery = function (id) {
+                    return new ModelQuery().find(id).from(this);
+                };
+                Repository.prototype.find = function (id) {
+                    return this.findQuery(id).executeSingle();
+                };
+                Repository.prototype.get = function (query) {
+                    var _this = this;
+                    if (query.getFrom() != this) {
+                        throw new Exception('ModelQuery\'s repository doesn\'t match executing repository');
+                    }
+                    var mainDataQuery = this._createMainDataQuery(query);
+                    return this._executeDataQuery(mainDataQuery).then(function (mainData) {
+                        var relatedDataQueries = _this._createRelatedDataQueries(query, mainData);
+                        var relatedPromises = [];
+                        relatedDataQueries.each(function (dataQuery) {
+                            relatedPromises.push(_this._executeDataQuery(dataQuery));
+                        });
+                        return _this.$q.all(relatedPromises);
+                    });
+                };
+                Repository.prototype.getFirst = function (query) {
+                    return this.get(query).then(function (results) {
+                        return results.length > 0 ? results.first() : null;
+                    });
+                };
+                Repository.prototype.create = function () {
+                };
+                Repository.prototype.update = function () {
+                };
+                Repository.prototype.remove = function () {
+                };
+                Repository.prototype._executeDataQuery = function (query) {
+                    var _this = this;
+                    throw '_executeDataQuery deprecated';
+                    var promise = this.$q.defer();
+                    var currentDataSourceIndex = 0;
+                    var tryNextDataSource = function () {
+                        if (currentDataSourceIndex >= _this.dataSources.length) {
+                            promise.reject();
+                            return;
+                        }
+                        var dataSource = _this.dataSources.get(currentDataSourceIndex);
+                        currentDataSourceIndex++;
+                        dataSource.get(query).then(function (dataResult) {
+                            promise.resolve(dataResult);
+                        }).catch(function () {
+                            tryNextDataSource();
+                        });
+                    };
+                };
+                Repository.prototype._createMainDataQuery = function (modelQuery) {
+                    throw '_createMainDataQuery deprecated';
+                };
+                Repository.prototype._createRelatedDataQueries = function (modelQuery, mainDataResult) {
+                    throw '_createRelatedDataQueries deprecated';
+                };
+                Repository.$inject = ['$q', '$injector'];
+                return Repository;
+            })(TSCore.BaseObject);
+            Data.Repository = Repository;
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var ResultSet;
+            (function (ResultSet) {
+                var DataResultSet = (function () {
+                    function DataResultSet() {
+                    }
+                    return DataResultSet;
+                })();
+                ResultSet.DataResultSet = DataResultSet;
+            })(ResultSet = Data.ResultSet || (Data.ResultSet = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var ResultSet;
+            (function (ResultSet) {
+                var ModelResultSet = (function (_super) {
+                    __extends(ModelResultSet, _super);
+                    function ModelResultSet() {
+                        _super.apply(this, arguments);
+                    }
+                    return ModelResultSet;
+                })(ModelList);
+                ResultSet.ModelResultSet = ModelResultSet;
+            })(ResultSet = Data.ResultSet || (Data.ResultSet = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
@@ -860,8 +1307,17 @@ var TSCore;
 /// <reference path="TSCore/App/Auth/AccountType.ts" />
 /// <reference path="TSCore/App/Auth/Manager.ts" />
 /// <reference path="TSCore/App/Auth/Session.ts" />
+/// <reference path="TSCore/App/Data/DataSource/Api.ts" />
+/// <reference path="TSCore/App/Data/DataSource/IDataSource.ts" />
+/// <reference path="TSCore/App/Data/DataSource/Memory.ts" />
 /// <reference path="TSCore/App/Data/Model.ts" />
+/// <reference path="TSCore/App/Data/Query/Condition.ts" />
+/// <reference path="TSCore/App/Data/Query/DataQuery.ts" />
+/// <reference path="TSCore/App/Data/Query/ModelQuery.ts" />
 /// <reference path="TSCore/App/Data/RemoteModelStore.ts" />
+/// <reference path="TSCore/App/Data/Repository.ts" />
+/// <reference path="TSCore/App/Data/ResultSet/DataResultSet.ts" />
+/// <reference path="TSCore/App/Data/ResultSet/ModelResultSet.ts" />
 /// <reference path="TSCore/App/Http/Api.ts" />
 /// <reference path="TSCore/App/Http/ApiEndpoint.ts" />
 /// <reference path="TSCore/App/Interceptors/HttpInterceptor.ts" />

@@ -7,13 +7,12 @@ module TSCore.App.Data {
     import DataQuery = TSCore.App.Data.Query.DataQuery;
     import IDataSource = TSCore.App.Data.DataSource.IDataSource;
     import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
-    import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
 
     export class Repository<T extends TSCore.App.Data.Model> extends TSCore.BaseObject {
 
         public static $inject = ['$q', '$injector'];
 
-        public dataSources: List<DataSource> = new List<DataSource>();
+        public dataSources: List<IDataSource> = new List<IDataSource>();
 
         public constructor(protected $q:ng.IQService,
                            protected $injector) {
@@ -22,12 +21,12 @@ module TSCore.App.Data {
         }
 
 
-        public addDataSource(dataSource: DataSource) {
+        public addDataSource(dataSource: IDataSource) {
 
             this.dataSources.add(dataSource);
         }
 
-        public removeDataSource(dataSource: DataSource) {
+        public removeDataSource(dataSource: IDataSource) {
 
             this.dataSources.remove(dataSource);
         }
@@ -35,7 +34,7 @@ module TSCore.App.Data {
 
         public query(): ModelQuery<T> {
 
-            return new ModelQuery()<T>().from(this);
+            return new ModelQuery<T>().from(this);
         }
 
         public allQuery(): ModelQuery<T> {
@@ -50,7 +49,7 @@ module TSCore.App.Data {
 
         public findQuery(id: any): ModelQuery<T> {
 
-            return new ModelQuery()<T>().find(id).from(this);
+            return new ModelQuery<T>().find(id).from(this);
         }
 
         public find(id: any): ng.IPromise<T> {
@@ -79,9 +78,6 @@ module TSCore.App.Data {
 
                 return this.$q.all(relatedPromises);
 
-            }).then(() => {
-
-
             });
         }
 
@@ -108,6 +104,7 @@ module TSCore.App.Data {
 
         protected _executeDataQuery(query: DataQuery): ng.IPromise<DataResultSet> {
 
+            throw '_executeDataQuery deprecated';
             var promise = this.$q.defer();
 
             var currentDataSourceIndex = 0;
@@ -138,13 +135,11 @@ module TSCore.App.Data {
 
 
         protected _createMainDataQuery(modelQuery: ModelQuery<T>): DataQuery {
-
-
+            throw '_createMainDataQuery deprecated';
         }
 
         protected _createRelatedDataQueries(modelQuery: ModelQuery<T>, mainDataResult: DataResultSet): List<DataQuery> {
-
-
+            throw '_createRelatedDataQueries deprecated';
         }
     }
 }

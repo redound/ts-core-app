@@ -1,3 +1,5 @@
+/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
+/// <reference path="../typings/tsd.d.ts" />
 declare module TSCore.App {
 }
 declare module TSCore.App.Auth {
@@ -62,6 +64,44 @@ declare module TSCore.App.Auth {
         static fromJson(obj: any): Session;
     }
 }
+declare module TSCore.App.Data.DataSource {
+    import DataQuery = TSCore.App.Data.Query.DataQuery;
+    import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
+    class Api implements IDataSource {
+        get(query: DataQuery): ng.IPromise<DataResultSet>;
+        create(key: any, value: any): ng.IPromise<any>;
+        update(key: any, value: any): ng.IPromise<any>;
+        remove(key: any): ng.IPromise<any>;
+        clear(): ng.IPromise<any>;
+        importResultSet(resultSet: DataResultSet): void;
+    }
+}
+declare module TSCore.App.Data.DataSource {
+    import DataQuery = TSCore.App.Data.Query.DataQuery;
+    import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
+    interface IDataSource {
+        get(query: DataQuery): ng.IPromise<DataResultSet>;
+        create(key: any, value: any): ng.IPromise<any>;
+        update(key: any, value: any): ng.IPromise<any>;
+        remove(key: any): ng.IPromise<any>;
+        clear(): ng.IPromise<any>;
+        importResultSet(resultSet: DataResultSet): any;
+    }
+}
+declare module TSCore.App.Data.DataSource {
+    import DataQuery = TSCore.App.Data.Query.DataQuery;
+    import Dictionary = TSCore.Data.Dictionary;
+    import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
+    class Memory implements IDataSource {
+        protected _store: Dictionary<any, any>;
+        get(query: DataQuery): ng.IPromise<DataResultSet>;
+        create(key: any, value: any): ng.IPromise<any>;
+        update(key: any, value: any): ng.IPromise<any>;
+        remove(key: any): ng.IPromise<any>;
+        clear(): ng.IPromise<any>;
+        importResultSet(resultSet: DataResultSet): void;
+    }
+}
 declare module TSCore.App.Data {
     enum ModelRelationType {
         ONE = 0,
@@ -82,6 +122,74 @@ declare module TSCore.App.Data {
     class Model extends TSCore.Data.Model {
         static relations(): IModelRelationsInterface;
         toObject(includeRelations?: boolean): {};
+    }
+}
+declare module TSCore.App.Data.Query {
+    enum ConditionOperator {
+        EQUALS = 0,
+        NOT_EQUALS = 1,
+        GREATER_THAN = 2,
+        GREATER_THAN_EQUALS = 3,
+        LESS_THAN = 4,
+        LESS_THAN_EQUALS = 5,
+    }
+    class Condition extends TSCore.BaseObject {
+        private static VALUE_REGEX;
+        protected _property: string;
+        protected _operator: ConditionOperator;
+        protected _value: any;
+        constructor(property: string, operator: ConditionOperator, value: any);
+        getProperty(): string;
+        getOperator(): ConditionOperator;
+        getValue(): any;
+        static parse(conditionString: string): Condition;
+    }
+}
+declare module TSCore.App.Data.Query {
+    import Collection = TSCore.Data.Collection;
+    import IModelInterface = TSCore.Data.IModelInterface;
+    interface IDataQueryRelationConstraint {
+        model: IModelInterface;
+        itemId: any;
+    }
+    class DataQuery extends TSCore.BaseObject {
+        protected _model: IModelInterface;
+        protected _itemId: any;
+        protected _relationConstraints: Collection<IDataQueryRelationConstraint>;
+        find(id: any): DataQuery;
+        getItemId(): any;
+        withRelationConstraint(model: IModelInterface, itemId: any): DataQuery;
+        getRelationConstraints(): Collection<IDataQueryRelationConstraint>;
+    }
+}
+declare module TSCore.App.Data.Query {
+    import Collection = TSCore.Data.Collection;
+    import List = TSCore.Data.List;
+    import Dictionary = TSCore.Data.Dictionary;
+    import Model = TSCore.Data.Model;
+    import ModelResultSet = TSCore.App.Data.ResultSet.ModelResultSet;
+    class ModelQuery<T extends Model> extends TSCore.BaseObject {
+        protected _repository: Repository<T>;
+        protected _itemId: any;
+        protected _includes: Collection<string>;
+        protected _conditions: List<Condition>;
+        protected _options: Dictionary<string, any>;
+        constructor();
+        from(repository: Repository<T>): ModelQuery<T>;
+        getFrom(): Repository<T>;
+        find(id: any): ModelQuery<T>;
+        getItemId(): any;
+        condition(condition: Condition): ModelQuery<T>;
+        getConditions(): List<Condition>;
+        where(conditions: string, bind?: any): ModelQuery<T>;
+        having(values: any): ModelQuery<T>;
+        include(...args: string[]): ModelQuery<T>;
+        getIncludes(): Collection<string>;
+        option(key: string, value: any): ModelQuery<T>;
+        getOptions(): Dictionary<string, any>;
+        execute(): ng.IPromise<ModelResultSet<T>>;
+        executeSingle(): ng.IPromise<T>;
+        protected _resolveTokens(input: string, tokens: any): string;
     }
 }
 declare module TSCore.App.Data {
@@ -118,6 +226,51 @@ declare module TSCore.App.Data {
         protected _processGetResponse(response: TSCore.App.Http.IApiEndpointResponse, queryOptions?: IModelQueryOptions): ng.IPromise<T>;
         protected _composeModel(itemModel: T, queryOptions?: IModelQueryOptions): ng.IPromise<any>;
         protected _extractRelationData(itemData: any): void;
+    }
+}
+declare module TSCore.App.Data {
+    import ModelQuery = TSCore.App.Data.Query.ModelQuery;
+    import List = TSCore.Data.List;
+    import ModelResultSet = TSCore.App.Data.ResultSet.ModelResultSet;
+    import DataQuery = TSCore.App.Data.Query.DataQuery;
+    import IDataSource = TSCore.App.Data.DataSource.IDataSource;
+    import DataResultSet = TSCore.App.Data.ResultSet.DataResultSet;
+    class Repository<T extends TSCore.App.Data.Model> extends TSCore.BaseObject {
+        protected $q: ng.IQService;
+        protected $injector: any;
+        static $inject: string[];
+        dataSources: List<IDataSource>;
+        constructor($q: ng.IQService, $injector: any);
+        addDataSource(dataSource: IDataSource): void;
+        removeDataSource(dataSource: IDataSource): void;
+        query(): ModelQuery<T>;
+        allQuery(): ModelQuery<T>;
+        all(): ng.IPromise<T[]>;
+        findQuery(id: any): ModelQuery<T>;
+        find(id: any): ng.IPromise<T>;
+        get(query: ModelQuery<T>): ng.IPromise<ModelResultSet<T>>;
+        getFirst(query: ModelQuery<T>): ng.IPromise<T>;
+        create(): void;
+        update(): void;
+        remove(): void;
+        protected _executeDataQuery(query: DataQuery): ng.IPromise<DataResultSet>;
+        protected _createMainDataQuery(modelQuery: ModelQuery<T>): DataQuery;
+        protected _createRelatedDataQueries(modelQuery: ModelQuery<T>, mainDataResult: DataResultSet): List<DataQuery>;
+    }
+}
+declare module TSCore.App.Data.ResultSet {
+    import IModelInterface = TSCore.Data.IModelInterface;
+    class DataResultSet {
+        protected _model: IModelInterface;
+        protected _data: any;
+        protected _receiveDate: Date;
+        protected _containsAllData: boolean;
+    }
+}
+declare module TSCore.App.Data.ResultSet {
+    import Model = TSCore.App.Data.Model;
+    import ModelList = TSCore.Data.ModelList;
+    class ModelResultSet<T extends Model> extends ModelList<T> {
     }
 }
 declare module TSCore.App.Http {
