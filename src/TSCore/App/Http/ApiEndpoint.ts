@@ -6,7 +6,7 @@ module TSCore.App.Http {
         data: any
     }
 
-    export class ApiEndpoint {
+    export class xApiEndpoint {
 
         static $inject = ['apiService'];
 
