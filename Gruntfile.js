@@ -9,16 +9,13 @@ module.exports = function(grunt) {
                 out: 'build/ts-core-app.js',
                 reference: 'src/ts-core-app.r.ts',
                 options: {
-                    fast: 'never',
-                    declaration: true,
-                    //noResolve: true
+                    declaration: true
                 }
             },
             test: {
                 src: ['test/**/*.ts', '!node_modules/**/*.spec.ts'],
                 out: 'test/ts-core-app.spec.js',
                 options: {
-                    fast: 'never',
                     sourceMap: false
                 }
             }

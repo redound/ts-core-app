@@ -1,14 +1,13 @@
-/// <reference path="../../build/ts-core-app.d.ts" />
-describe("TSCore.App", function () {
-    it("test should work", function () {
-        expect(true).toEqual(true);
-    });
-});
 /// <reference path="../../TSCore.spec.ts" />
-var JsonGraph = TSCore.App.Data.JsonGraph;
-describe("TSCore.App.Data.JsonGraph", function () {
+
+import JsonGraph = TSCore.App.Data.JsonGraph;
+declare var describe, it, expect, jasmine, beforeEach, beforeAll;
+
+describe("TSCore.App.Data.JsonGraph", () => {
+
     var graph;
-    beforeAll(function () {
+
+    beforeAll(() => {
         graph = new JsonGraph({
             users: {
                 1: {
@@ -64,23 +63,32 @@ describe("TSCore.App.Data.JsonGraph", function () {
             }
         });
     });
-    describe("get()", function () {
-        it("should return all users", function () {
+
+    describe("get()", () => {
+
+        it("should return all users", () => {
+
             var users = graph.get(["users"]);
             console.log(users);
             expect(1).toEqual(1);
         });
-        it("should return one user", function () {
+
+        it("should return one user", () => {
+
             var user = graph.get(["users", 1]);
             console.log(user);
             expect(1).toEqual(1);
         });
-        it("should return the users of a project", function () {
+
+        it("should return the users of a project", () => {
+
             var users = graph.get(["projects", 2, "users"]);
             console.log(users);
             expect(1).toEqual(1);
         });
-        it("should return projects with users", function () {
+
+        it("should return projects with users", () => {
+
             var projects = graph.get(["projects"]);
             console.log(projects);
             expect(1).toEqual(1);
