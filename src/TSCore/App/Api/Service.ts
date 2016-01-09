@@ -2,7 +2,7 @@ module TSCore.App.Api {
 
     import Query = TSCore.App.Data.Query.Query;
     import IDataSource = TSCore.App.Data.IDataSource;
-    import IDataSourceResponse = TSCore.App.Data.Responses.IDataSourceResponse;
+    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
     import JsonGraphTransformer = TSCore.App.Data.Transformers.JsonGraphTransformer;
     import Resource = TSCore.App.Api.Resource;
 
@@ -26,7 +26,7 @@ module TSCore.App.Api {
             return this;
         }
 
-        public query(query: Query): ng.IPromise<IDataSourceResponse> {
+        public execute(query: Query): ng.IPromise<IDataSourceResponse> {
 
             var resource = this._resources.get(query.getFrom());
 
@@ -53,29 +53,33 @@ module TSCore.App.Api {
             return null;
         }
 
-        public create(key: any, value: any): ng.IPromise<any>
+        public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>
         {
-            throw 'ApiDataSource - Create - Not implemented yet';
+            // TODO
+            return null;
         }
 
-        public update(key: any, value: any): ng.IPromise<any>
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>
         {
-            throw 'ApiDataSource - Update - Not implemented yet';
+            // TODO
+            return null;
         }
 
-        public remove(key: any): ng.IPromise<any>
+        public remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>
         {
-            throw 'ApiDataSource - Remove - Not implemented yet';
+            // TODO
+            return null;
         }
 
         public clear(): ng.IPromise<any>
         {
-            throw 'ApiDataSource - Clear - Not implemented yet';
+            // TODO
+            return null;
         }
 
         public importResponse(response: IDataSourceResponse)
         {
-            throw 'ApiDataSource - ImportResultSet - Not implemented yet';
+            // TODO
         }
     }
 }

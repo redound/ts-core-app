@@ -1,4 +1,4 @@
-module TSCore.App.Data {
+module TSCore.App.Data.Model {
 
     export class Model extends TSCore.Data.Model {
 

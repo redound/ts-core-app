@@ -1,4 +1,4 @@
-/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
+/// <reference path="../../ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 
 //grunt-start
@@ -9,14 +9,14 @@
 /// <reference path="TSCore/App/Auth/Manager.ts" />
 /// <reference path="TSCore/App/Auth/Session.ts" />
 /// <reference path="TSCore/App/Constants/HttpMethods.ts" />
-/// <reference path="TSCore/App/Data/DataSources/MemoryDataSource.ts" />
 /// <reference path="TSCore/App/Data/IDataSource.ts" />
+/// <reference path="TSCore/App/Data/IDataSourceResponse.ts" />
 /// <reference path="TSCore/App/Data/JsonGraph.ts" />
-/// <reference path="TSCore/App/Data/Model.ts" />
+/// <reference path="TSCore/App/Data/Model/ActiveModel.ts" />
+/// <reference path="TSCore/App/Data/Model/Model.ts" />
 /// <reference path="TSCore/App/Data/Query/Condition.ts" />
 /// <reference path="TSCore/App/Data/Query/Query.ts" />
 /// <reference path="TSCore/App/Data/Query/Sorter.ts" />
-/// <reference path="TSCore/App/Data/Responses/IDataSourceResponse.ts" />
 /// <reference path="TSCore/App/Data/Service.ts" />
 /// <reference path="TSCore/App/Data/Transformer.ts" />
 /// <reference path="TSCore/App/Data/Transformers/JsonGraphTransformer.ts" />

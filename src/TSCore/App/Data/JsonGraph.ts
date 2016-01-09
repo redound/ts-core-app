@@ -9,8 +9,8 @@ module TSCore.App.Data {
 
         protected _data: any;
 
-        public constructor(data) {
-            this._data = data;
+        public constructor(data?) {
+            this._data = data || {};
         }
 
         public get(path) {

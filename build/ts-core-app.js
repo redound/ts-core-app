@@ -243,7 +243,7 @@ var TSCore;
                     this._resources.set(name, resource);
                     return this;
                 };
-                Service.prototype.query = function (query) {
+                Service.prototype.execute = function (query) {
                     var _this = this;
                     var resource = this._resources.get(query.getFrom());
                     if (resource) {
@@ -261,20 +261,19 @@ var TSCore;
                     console.log('graph', graph);
                     return null;
                 };
-                Service.prototype.create = function (key, value) {
-                    throw 'ApiDataSource - Create - Not implemented yet';
+                Service.prototype.create = function (resourceName, data) {
+                    return null;
                 };
-                Service.prototype.update = function (key, value) {
-                    throw 'ApiDataSource - Update - Not implemented yet';
+                Service.prototype.update = function (resourceName, resourceId, data) {
+                    return null;
                 };
-                Service.prototype.remove = function (key) {
-                    throw 'ApiDataSource - Remove - Not implemented yet';
+                Service.prototype.remove = function (resourceName, resourceId) {
+                    return null;
                 };
                 Service.prototype.clear = function () {
-                    throw 'ApiDataSource - Clear - Not implemented yet';
+                    return null;
                 };
                 Service.prototype.importResponse = function (response) {
-                    throw 'ApiDataSource - ImportResultSet - Not implemented yet';
                 };
                 return Service;
             })();
@@ -461,45 +460,9 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
-            var DataSources;
-            (function (DataSources) {
-                var MemoryDataSource = (function () {
-                    function MemoryDataSource() {
-                    }
-                    MemoryDataSource.prototype.query = function (query) {
-                        throw 'ApiDataSource - Query - Not implemented yet';
-                    };
-                    MemoryDataSource.prototype.create = function (key, value) {
-                        throw 'ApiDataSource - Create - Not implemented yet';
-                    };
-                    MemoryDataSource.prototype.update = function (key, value) {
-                        throw 'ApiDataSource - Update - Not implemented yet';
-                    };
-                    MemoryDataSource.prototype.remove = function (key) {
-                        throw 'ApiDataSource - Remove - Not implemented yet';
-                    };
-                    MemoryDataSource.prototype.clear = function () {
-                        throw 'ApiDataSource - Clear - Not implemented yet';
-                    };
-                    MemoryDataSource.prototype.importResponse = function (response) {
-                        throw 'ApiDataSource - ImportResultSet - Not implemented yet';
-                    };
-                    return MemoryDataSource;
-                })();
-                DataSources.MemoryDataSource = MemoryDataSource;
-            })(DataSources = Data.DataSources || (Data.DataSources = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
             var JsonGraph = (function () {
                 function JsonGraph(data) {
-                    this._data = data;
+                    this._data = data || {};
                 }
                 JsonGraph.prototype.get = function (path) {
                     var _this = this;
@@ -560,26 +523,126 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
-            var Model = (function (_super) {
-                __extends(Model, _super);
-                function Model() {
-                    _super.apply(this, arguments);
-                }
-                Model.prototype.toObject = function (includeRelations) {
-                    if (includeRelations === void 0) { includeRelations = true; }
-                    var result = _super.prototype.toObject.call(this);
-                    if (includeRelations === false) {
-                        _.each(_.keys(this.static.relations()), function (key) {
-                            if (result[key]) {
-                                delete result[key];
-                            }
-                        });
+            var Model;
+            (function (Model) {
+                var Exception = TSCore.Exception.Exception;
+                (function (ActiveModelFlag) {
+                    ActiveModelFlag[ActiveModelFlag["ALIVE"] = 0] = "ALIVE";
+                    ActiveModelFlag[ActiveModelFlag["CREATED"] = 1] = "CREATED";
+                    ActiveModelFlag[ActiveModelFlag["REMOVED"] = 2] = "REMOVED";
+                })(Model.ActiveModelFlag || (Model.ActiveModelFlag = {}));
+                var ActiveModelFlag = Model.ActiveModelFlag;
+                var ActiveModel = (function (_super) {
+                    __extends(ActiveModel, _super);
+                    function ActiveModel() {
+                        _super.apply(this, arguments);
+                        this._flags = new TSCore.Data.Collection();
                     }
-                    return result;
-                };
-                return Model;
-            })(TSCore.Data.Model);
-            Data.Model = Model;
+                    ActiveModel.prototype.makeAlive = function (dataService, resourceName) {
+                        this._dataService = dataService;
+                        this._resourceName = resourceName;
+                        this._flags.addMany([ActiveModelFlag.ALIVE, ActiveModelFlag.CREATED]);
+                    };
+                    ActiveModel.prototype.die = function () {
+                        this._dataService = null;
+                        this._resourceName = null;
+                        this._flags.removeMany([ActiveModelFlag.ALIVE]);
+                    };
+                    ActiveModel.prototype.setSavedData = function (data) {
+                        this._savedData = data;
+                    };
+                    ActiveModel.prototype.markRemoved = function () {
+                        this._flags.add(ActiveModelFlag.REMOVED);
+                    };
+                    ActiveModel.prototype.update = function (data) {
+                        if (!this.isAlive()) {
+                            throw new Exception('Unable to update ' + this.getResourceIdentifier() + ', model is not alive');
+                        }
+                        return this._dataService.updateModel(this._resourceName, this, data);
+                    };
+                    ActiveModel.prototype.create = function (dataService, resourceName, data) {
+                        return dataService.createModel(resourceName, this, data);
+                    };
+                    ActiveModel.prototype.remove = function () {
+                        if (!this.isAlive()) {
+                            throw new Exception('Unable to remove ' + this.getResourceIdentifier() + ', model is not alive');
+                        }
+                        return this._dataService.removeModel(this._resourceName, this);
+                    };
+                    ActiveModel.prototype.refresh = function () {
+                        var _this = this;
+                        if (!this.isAlive()) {
+                            throw new Exception('Unable to refresh ' + this.getResourceIdentifier() + ', model is not alive');
+                        }
+                        return this._dataService.find(this._resourceName, this.getId()).then(function (result) {
+                            if (!_this.equals(result)) {
+                                _this.merge(result);
+                                return true;
+                            }
+                            return false;
+                        });
+                    };
+                    ActiveModel.prototype.isAlive = function () {
+                        return this._flags.contains(ActiveModelFlag.ALIVE);
+                    };
+                    ActiveModel.prototype.isCreated = function () {
+                        return this._flags.contains(ActiveModelFlag.CREATED);
+                    };
+                    ActiveModel.prototype.isRemoved = function () {
+                        return this._flags.contains(ActiveModelFlag.REMOVED);
+                    };
+                    ActiveModel.prototype.isDirty = function () {
+                        return !this._savedData || !this.equals(this._savedData);
+                    };
+                    ActiveModel.prototype.getResourceIdentifier = function () {
+                        if (!this._resourceName && !this.getId()) {
+                            return 'unknown model';
+                        }
+                        var identifier = '';
+                        if (this._resourceName) {
+                            identifier += this._resourceName;
+                        }
+                        if (this.getId()) {
+                            identifier += '(' + this.getId() + ')';
+                        }
+                        return identifier;
+                    };
+                    return ActiveModel;
+                })(TSCore.App.Data.Model.Model);
+                Model.ActiveModel = ActiveModel;
+            })(Model = Data.Model || (Data.Model = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Model;
+            (function (Model_1) {
+                var Model = (function (_super) {
+                    __extends(Model, _super);
+                    function Model() {
+                        _super.apply(this, arguments);
+                    }
+                    Model.prototype.toObject = function (includeRelations) {
+                        if (includeRelations === void 0) { includeRelations = true; }
+                        var result = _super.prototype.toObject.call(this);
+                        if (includeRelations === false) {
+                            _.each(_.keys(this.static.relations()), function (key) {
+                                if (result[key]) {
+                                    delete result[key];
+                                }
+                            });
+                        }
+                        return result;
+                    };
+                    return Model;
+                })(TSCore.Data.Model);
+                Model_1.Model = Model;
+            })(Model = Data.Model || (Data.Model = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
@@ -802,9 +865,129 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
+            var List = TSCore.Data.List;
+            var Query = TSCore.App.Data.Query.Query;
+            var ActiveModel = TSCore.App.Data.Model.ActiveModel;
             var Service = (function () {
-                function Service() {
+                function Service($q) {
+                    this.$q = $q;
+                    this._sources = new List();
                 }
+                Service.prototype.source = function (source) {
+                    this._sources.add(source);
+                    return this;
+                };
+                Service.prototype.getSources = function () {
+                    return this._sources.clone();
+                };
+                Service.prototype.create = function (resourceName, data) {
+                    var _this = this;
+                    return this._executeCreate(resourceName, data).then(function (result) {
+                        return _this._createModels(result).first();
+                    });
+                };
+                Service.prototype.createModel = function (resourceName, model, data) {
+                    var _this = this;
+                    if (data) {
+                        model.assignAll(data);
+                    }
+                    return this._executeCreate(resourceName, model.toObject(true)).then(function (result) {
+                        _this._updateModel(model, result);
+                        if (model instanceof ActiveModel) {
+                            model.makeAlive(_this, resourceName);
+                        }
+                        return model.getId();
+                    });
+                };
+                Service.prototype.update = function (resourceName, resourceId, data) {
+                    var _this = this;
+                    return this._executeUpdate(resourceName, resourceId, data).then(function (result) {
+                        return _this._createModels(result).first();
+                    });
+                };
+                Service.prototype.updateModel = function (resourceName, model, data) {
+                    var _this = this;
+                    return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(function (result) {
+                        _this._updateModel(model, result);
+                        return null;
+                    });
+                };
+                Service.prototype.remove = function (resourceName, resourceId) {
+                    return this._executeRemove(resourceName, resourceId).then(function () { return null; });
+                };
+                Service.prototype.removeModel = function (resourceName, model) {
+                    var _this = this;
+                    return this._executeRemove(resourceName, model.getId()).then(function () {
+                        _this._removeModel(model);
+                        return null;
+                    });
+                };
+                Service.prototype.query = function (resourceName) {
+                    return Query.from(resourceName);
+                };
+                Service.prototype.all = function (resourceName) {
+                    return this.execute(Query.from(resourceName));
+                };
+                Service.prototype.find = function (resourceName, resourceId) {
+                    return this.execute(Query
+                        .from(resourceName)
+                        .find(resourceId))
+                        .then(function (results) {
+                        return results.first();
+                    });
+                };
+                Service.prototype.execute = function (query) {
+                    var _this = this;
+                    return this._executeQuery(query).then(function (results) {
+                        return _this._createModels(results);
+                    });
+                };
+                Service.prototype._executeQuery = function (query) {
+                    return this._executeInSources(function (source) {
+                        return source.execute(query);
+                    });
+                };
+                Service.prototype._executeCreate = function (resourceName, data) {
+                    return null;
+                };
+                Service.prototype._executeUpdate = function (resourceName, resourceId, data) {
+                    return null;
+                };
+                Service.prototype._executeRemove = function (resourceName, resourceId) {
+                    return null;
+                };
+                Service.prototype._executeInSources = function (executor) {
+                    var _this = this;
+                    var sourceIndex = 0;
+                    var promise = this.$q.defer();
+                    var nextSource = function () {
+                        if (sourceIndex >= _this._sources.count()) {
+                            promise.reject();
+                        }
+                        var source = _this._sources.get(sourceIndex);
+                        executor(source)
+                            .then(function (response) { return promise.resolve(response); })
+                            .catch(function () { return nextSource(); });
+                        sourceIndex++;
+                    };
+                    nextSource();
+                    return promise.promise;
+                };
+                Service.prototype._createModels = function (data) {
+                    // TODO: Create models from source results
+                    return null;
+                };
+                Service.prototype._updateModel = function (model, data) {
+                    // TODO: Resolve data
+                };
+                Service.prototype._removeModel = function (model) {
+                    if (model instanceof ActiveModel) {
+                        model.setSavedData(null);
+                        model.markRemoved();
+                        model.die();
+                    }
+                };
+                Service.$inject = ['$q'];
                 return Service;
             })();
             Data.Service = Service;
@@ -871,18 +1054,40 @@ var TSCore;
         (function (Data) {
             var Transformers;
             (function (Transformers) {
+                var TreeWalker = (function () {
+                    function TreeWalker(data) {
+                    }
+                    TreeWalker.prototype.walk = function (callback) {
+                    };
+                    return TreeWalker;
+                })();
                 var JsonGraphTransformer = (function () {
                     function JsonGraphTransformer() {
-                        this._resources = new TSCore.Data.Dictionary();
+                        this._aliases = new TSCore.Data.Dictionary();
                     }
                     JsonGraphTransformer.prototype.resource = function (key, aliases) {
-                        this._resources.set(key, aliases);
+                        var _this = this;
+                        _.each(aliases, function (alias) { return _this._aliases.set(alias, key); });
                         return this;
                     };
                     JsonGraphTransformer.prototype.transform = function (data) {
-                        var results;
-                        _.each(data, function (value, key) {
-                            key = key.toString();
+                        var _this = this;
+                        var results = new Data.JsonGraph();
+                        function resolveResource(resourceName, resource) {
+                        }
+                        var tree = new TreeWalker(data);
+                        tree.walk(function (value, alias) {
+                            alias = alias.toString();
+                            if (!_this._aliases.contains(alias)) {
+                                return;
+                            }
+                            var resourceName = _this._aliases.get(alias);
+                            if (_.isArray(value)) {
+                                _.each(value, function (resource) { return resolveResource(resourceName, resource); });
+                            }
+                            else if (_.isObject(value)) {
+                                resolveResource(resourceName, value);
+                            }
                         });
                         return results;
                     };
@@ -1070,7 +1275,7 @@ var TSCore;
         })(Interceptors = App.Interceptors || (App.Interceptors = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
+/// <reference path="../../ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="TSCore/App/Api/Resource.ts" />
 /// <reference path="TSCore/App/Api/Service.ts" />
@@ -1079,14 +1284,14 @@ var TSCore;
 /// <reference path="TSCore/App/Auth/Manager.ts" />
 /// <reference path="TSCore/App/Auth/Session.ts" />
 /// <reference path="TSCore/App/Constants/HttpMethods.ts" />
-/// <reference path="TSCore/App/Data/DataSources/MemoryDataSource.ts" />
 /// <reference path="TSCore/App/Data/IDataSource.ts" />
+/// <reference path="TSCore/App/Data/IDataSourceResponse.ts" />
 /// <reference path="TSCore/App/Data/JsonGraph.ts" />
-/// <reference path="TSCore/App/Data/Model.ts" />
+/// <reference path="TSCore/App/Data/Model/ActiveModel.ts" />
+/// <reference path="TSCore/App/Data/Model/Model.ts" />
 /// <reference path="TSCore/App/Data/Query/Condition.ts" />
 /// <reference path="TSCore/App/Data/Query/Query.ts" />
 /// <reference path="TSCore/App/Data/Query/Sorter.ts" />
-/// <reference path="TSCore/App/Data/Responses/IDataSourceResponse.ts" />
 /// <reference path="TSCore/App/Data/Service.ts" />
 /// <reference path="TSCore/App/Data/Transformer.ts" />
 /// <reference path="TSCore/App/Data/Transformers/JsonGraphTransformer.ts" />

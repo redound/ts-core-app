@@ -1,4 +1,4 @@
-module TSCore.App.Data.Responses {
+module TSCore.App.Data {
 
     export interface IDataSourceResponse {
         data: JsonGraph,
