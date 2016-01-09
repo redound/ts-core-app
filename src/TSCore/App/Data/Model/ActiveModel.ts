@@ -1,3 +1,5 @@
+/// <reference path="./Model.ts" />
+
 module TSCore.App.Data.Model {
 
     import Exception = TSCore.Exception.Exception;

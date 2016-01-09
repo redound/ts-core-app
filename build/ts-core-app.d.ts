@@ -63,6 +63,13 @@ declare module TSCore.App.Api {
         protected _transformSingle(response: ng.IHttpPromiseCallbackArg<{}>): any;
     }
 }
+declare module TSCore.App.Data.Transformers {
+    class JsonGraphTransformer {
+        protected _aliases: TSCore.Data.Dictionary<string, string>;
+        resource(key: string, aliases: string[]): JsonGraphTransformer;
+        transform(data: any): JsonGraph;
+    }
+}
 declare module TSCore.App.Api {
     import Query = TSCore.App.Data.Query.Query;
     import IDataSource = TSCore.App.Data.IDataSource;
@@ -179,10 +186,18 @@ declare module TSCore.App.Data {
     class JsonGraph {
         protected _data: any;
         constructor(data?: any);
-        get(path: any): any;
-        protected pointerHasValue(value: any): boolean;
+        getData(): any;
+        get(path: string | number[]): any;
+        set(path: string | number[], value: any): void;
+        merge(graph: JsonGraph): void;
+        mergeData(data: any): void;
         protected resolvePointerValueRecursive(value: any): any;
         protected resolvePointerValue(value: any): any;
+    }
+}
+declare module TSCore.App.Data.Model {
+    class Model extends TSCore.Data.Model {
+        toObject(includeRelations?: boolean): {};
     }
 }
 declare module TSCore.App.Data.Model {
@@ -209,11 +224,6 @@ declare module TSCore.App.Data.Model {
         isRemoved(): boolean;
         isDirty(): boolean;
         getResourceIdentifier(): string;
-    }
-}
-declare module TSCore.App.Data.Model {
-    class Model extends TSCore.Data.Model {
-        toObject(includeRelations?: boolean): {};
     }
 }
 declare module TSCore.App.Data.Query {
@@ -335,16 +345,8 @@ declare module TSCore.Data.Transform {
         transform(item: any): void;
         collection(data: any): void[];
         item(data: any): void;
-        protected _ucFirst(string: any): any;
         static collection(data: any): void[];
         static item(data: any): void;
-    }
-}
-declare module TSCore.App.Data.Transformers {
-    class JsonGraphTransformer {
-        protected _aliases: TSCore.Data.Dictionary<string, string>;
-        resource(key: string, aliases: string[]): JsonGraphTransformer;
-        transform(data: any): JsonGraph;
     }
 }
 declare module TSCore.App.Http {

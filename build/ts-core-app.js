@@ -224,6 +224,59 @@ var TSCore;
 (function (TSCore) {
     var App;
     (function (App) {
+        var Data;
+        (function (Data) {
+            var Transformers;
+            (function (Transformers) {
+                var TreeWalker = (function () {
+                    function TreeWalker(data) {
+                    }
+                    TreeWalker.prototype.walk = function (callback) {
+                    };
+                    return TreeWalker;
+                })();
+                var JsonGraphTransformer = (function () {
+                    function JsonGraphTransformer() {
+                        this._aliases = new TSCore.Data.Dictionary();
+                    }
+                    JsonGraphTransformer.prototype.resource = function (key, aliases) {
+                        var _this = this;
+                        _.each(aliases, function (alias) { return _this._aliases.set(alias, key); });
+                        return this;
+                    };
+                    JsonGraphTransformer.prototype.transform = function (data) {
+                        var _this = this;
+                        var results = new Data.JsonGraph();
+                        function resolveResource(resourceName, resource) {
+                        }
+                        var tree = new TreeWalker(data);
+                        tree.walk(function (value, alias) {
+                            alias = alias.toString();
+                            if (!_this._aliases.contains(alias)) {
+                                return;
+                            }
+                            var resourceName = _this._aliases.get(alias);
+                            if (_.isArray(value)) {
+                                _.each(value, function (resource) { return resolveResource(resourceName, resource); });
+                            }
+                            else if (_.isObject(value)) {
+                                resolveResource(resourceName, value);
+                            }
+                        });
+                        return results;
+                    };
+                    return JsonGraphTransformer;
+                })();
+                Transformers.JsonGraphTransformer = JsonGraphTransformer;
+            })(Transformers = Data.Transformers || (Data.Transformers = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+/// <reference path="../Data/Transformers/JsonGraphTransformer.ts" />
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
         var Api;
         (function (Api) {
             var JsonGraphTransformer = TSCore.App.Data.Transformers.JsonGraphTransformer;
@@ -464,14 +517,18 @@ var TSCore;
                 function JsonGraph(data) {
                     this._data = data || {};
                 }
+                JsonGraph.prototype.getData = function () {
+                    return this._data;
+                };
                 JsonGraph.prototype.get = function (path) {
                     var _this = this;
                     path = path || [];
                     var depth = 0;
                     var pointer = this._data;
                     _.each(path, function (identifier) {
-                        if (_this.pointerHasValue(pointer[identifier])) {
-                            pointer = _this.resolvePointerValue(pointer[identifier]);
+                        var pointerValue = pointer[identifier];
+                        if (pointerValue !== undefined) {
+                            pointer = _this.resolvePointerValue(pointerValue);
                         }
                         depth++;
                     });
@@ -480,8 +537,12 @@ var TSCore;
                     }
                     return this.resolvePointerValueRecursive(pointer);
                 };
-                JsonGraph.prototype.pointerHasValue = function (value) {
-                    return value !== undefined;
+                JsonGraph.prototype.set = function (path, value) {
+                };
+                JsonGraph.prototype.merge = function (graph) {
+                    this.mergeData(graph.getData());
+                };
+                JsonGraph.prototype.mergeData = function (data) {
                 };
                 JsonGraph.prototype.resolvePointerValueRecursive = function (value) {
                     //alert('resolvePointerValueRecursive ' + JSON.stringify(value));
@@ -517,6 +578,39 @@ var __extends = (this && this.__extends) || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Model;
+            (function (Model_1) {
+                var Model = (function (_super) {
+                    __extends(Model, _super);
+                    function Model() {
+                        _super.apply(this, arguments);
+                    }
+                    Model.prototype.toObject = function (includeRelations) {
+                        if (includeRelations === void 0) { includeRelations = true; }
+                        var result = _super.prototype.toObject.call(this);
+                        if (includeRelations === false) {
+                            _.each(_.keys(this.static.relations()), function (key) {
+                                if (result[key]) {
+                                    delete result[key];
+                                }
+                            });
+                        }
+                        return result;
+                    };
+                    return Model;
+                })(TSCore.Data.Model);
+                Model_1.Model = Model;
+            })(Model = Data.Model || (Data.Model = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+/// <reference path="./Model.ts" />
 var TSCore;
 (function (TSCore) {
     var App;
@@ -610,38 +704,6 @@ var TSCore;
                     return ActiveModel;
                 })(TSCore.App.Data.Model.Model);
                 Model.ActiveModel = ActiveModel;
-            })(Model = Data.Model || (Data.Model = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Model;
-            (function (Model_1) {
-                var Model = (function (_super) {
-                    __extends(Model, _super);
-                    function Model() {
-                        _super.apply(this, arguments);
-                    }
-                    Model.prototype.toObject = function (includeRelations) {
-                        if (includeRelations === void 0) { includeRelations = true; }
-                        var result = _super.prototype.toObject.call(this);
-                        if (includeRelations === false) {
-                            _.each(_.keys(this.static.relations()), function (key) {
-                                if (result[key]) {
-                                    delete result[key];
-                                }
-                            });
-                        }
-                        return result;
-                    };
-                    return Model;
-                })(TSCore.Data.Model);
-                Model_1.Model = Model;
             })(Model = Data.Model || (Data.Model = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
@@ -1022,15 +1084,12 @@ var TSCore;
                     }
                     var result = this.transform(data);
                     _.each(this.availableIncludes, function (include) {
-                        var includeMethod = 'include' + _this._ucFirst(include);
+                        var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
                         if (result[include] && _this[includeMethod]) {
                             result[include] = _this[includeMethod](result);
                         }
                     });
                     return result;
-                };
-                Transformer.prototype._ucFirst = function (string) {
-                    return string.charAt(0).toUpperCase() + string.slice(1);
                 };
                 Transformer.collection = function (data) {
                     var transformer = new this;
@@ -1045,58 +1104,6 @@ var TSCore;
             Transform.Transformer = Transformer;
         })(Transform = Data.Transform || (Data.Transform = {}));
     })(Data = TSCore.Data || (TSCore.Data = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Transformers;
-            (function (Transformers) {
-                var TreeWalker = (function () {
-                    function TreeWalker(data) {
-                    }
-                    TreeWalker.prototype.walk = function (callback) {
-                    };
-                    return TreeWalker;
-                })();
-                var JsonGraphTransformer = (function () {
-                    function JsonGraphTransformer() {
-                        this._aliases = new TSCore.Data.Dictionary();
-                    }
-                    JsonGraphTransformer.prototype.resource = function (key, aliases) {
-                        var _this = this;
-                        _.each(aliases, function (alias) { return _this._aliases.set(alias, key); });
-                        return this;
-                    };
-                    JsonGraphTransformer.prototype.transform = function (data) {
-                        var _this = this;
-                        var results = new Data.JsonGraph();
-                        function resolveResource(resourceName, resource) {
-                        }
-                        var tree = new TreeWalker(data);
-                        tree.walk(function (value, alias) {
-                            alias = alias.toString();
-                            if (!_this._aliases.contains(alias)) {
-                                return;
-                            }
-                            var resourceName = _this._aliases.get(alias);
-                            if (_.isArray(value)) {
-                                _.each(value, function (resource) { return resolveResource(resourceName, resource); });
-                            }
-                            else if (_.isObject(value)) {
-                                resolveResource(resourceName, value);
-                            }
-                        });
-                        return results;
-                    };
-                    return JsonGraphTransformer;
-                })();
-                Transformers.JsonGraphTransformer = JsonGraphTransformer;
-            })(Transformers = Data.Transformers || (Data.Transformers = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
 /// <reference path="./RequestOptions.ts" />
 var TSCore;

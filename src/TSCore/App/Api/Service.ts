@@ -1,3 +1,5 @@
+/// <reference path="../Data/Transformers/JsonGraphTransformer.ts" />
+
 module TSCore.App.Api {
 
     import Query = TSCore.App.Data.Query.Query;

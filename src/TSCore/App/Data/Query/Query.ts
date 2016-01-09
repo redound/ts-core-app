@@ -1,6 +1,6 @@
 module TSCore.App.Data.Query {
 
-    import IataSource = TSCore.App.Data.IDataSource;
+    import DataSource = TSCore.App.Data.IDataSource;
     import Condition = TSCore.App.Data.Query.Condition;
     import Sorter = TSCore.App.Data.Query.Sorter;
     import Resource = TSCore.App.Api.Resource;
