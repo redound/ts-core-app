@@ -7,6 +7,7 @@ module TSCore.App.Data {
     import ActiveModel = TSCore.App.Data.Model.ActiveModel;
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    import ModelList = TSCore.Data.ModelList;
 
     export class Service {
 
@@ -92,7 +93,7 @@ module TSCore.App.Data {
             return Query.from(resourceName);
         }
 
-        public all(resourceName: string): ng.IPromise<List<Model>>
+        public all(resourceName: string): ng.IPromise<ModelList<Model>>
         {
             return this.execute(Query.from(resourceName));
         }
@@ -103,13 +104,13 @@ module TSCore.App.Data {
                 Query
                     .from(resourceName)
                     .find(resourceId))
-                .then((results: List<Model>) => {
+                .then((results: ModelList<Model>) => {
 
                 return results.first();
             });
         }
 
-        public execute(query: Query): ng.IPromise<List<Model>>
+        public execute(query: Query): ng.IPromise<ModelList<Model>>
         {
             return this._executeQuery(query).then(results => {
                 return this._createModels(results);
@@ -165,7 +166,7 @@ module TSCore.App.Data {
             return promise.promise;
         }
 
-        protected _createModels(data: IDataSourceResponse): List<Model>
+        protected _createModels(data: IDataSourceResponse): ModelList<Model>
         {
             // TODO: Create models from source results
 

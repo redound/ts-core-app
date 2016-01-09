@@ -301,6 +301,7 @@ declare module TSCore.App.Data {
     import Query = TSCore.App.Data.Query.Query;
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    import ModelList = TSCore.Data.ModelList;
     class Service {
         protected $q: ng.IQService;
         protected _sources: List<IDataSource>;
@@ -315,15 +316,15 @@ declare module TSCore.App.Data {
         remove(resourceName: string, resourceId: any): ng.IPromise<void>;
         removeModel(resourceName: string, model: Model): ng.IPromise<void>;
         query(resourceName: string): Query;
-        all(resourceName: string): ng.IPromise<List<Model>>;
+        all(resourceName: string): ng.IPromise<ModelList<Model>>;
         find(resourceName: string, resourceId: any): ng.IPromise<Model>;
-        execute(query: Query): ng.IPromise<List<Model>>;
+        execute(query: Query): ng.IPromise<ModelList<Model>>;
         protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse>;
         protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
         protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
-        protected _createModels(data: IDataSourceResponse): List<Model>;
+        protected _createModels(data: IDataSourceResponse): ModelList<Model>;
         protected _updateModel(model: Model, data: IDataSourceResponse): void;
         protected _removeModel(model: any): void;
     }
