@@ -13,7 +13,11 @@ module TSCore.App.Data {
             this._data = data || {};
         }
 
-        public get(path) {
+        public getData(): any {
+            return this._data;
+        }
+
+        public get(path: string|number[]) {
 
             path = path || [];
 
@@ -21,8 +25,10 @@ module TSCore.App.Data {
             var pointer = this._data;
             _.each(path, (identifier: any) => {
 
-                if (this.pointerHasValue(pointer[identifier])) {
-                    pointer = this.resolvePointerValue(pointer[identifier]);
+                var pointerValue = pointer[identifier];
+
+                if (pointerValue !== undefined) {
+                    pointer = this.resolvePointerValue(pointerValue);
                 }
 
                 depth++;
@@ -35,9 +41,18 @@ module TSCore.App.Data {
             return this.resolvePointerValueRecursive(pointer);
         }
 
-        protected pointerHasValue(value) {
+        public set(path: string|number[], value: any)
+        {
+            // TODO: Implement
+        }
+        
+        public merge(graph: JsonGraph){
+            this.mergeData(graph.getData());
+        }
 
-            return value !== undefined;
+        public mergeData(data: any){
+
+            // TODO: Implement
         }
 
         protected resolvePointerValueRecursive(value) {
@@ -47,11 +62,14 @@ module TSCore.App.Data {
             value = this.resolvePointerValue(value);
 
             if (_.isArray(value)) {
-                value = _.map(value, (item: any) => {
+
+                value = _.map(value, item => {
                     return this.resolvePointerValueRecursive(item);
                 });
-            } else if (_.isObject(value)) {
-                value = _.mapObject(value, (item: any) => {
+            }
+            else if (_.isObject(value)) {
+
+                value = _.mapObject(value, item => {
                     return this.resolvePointerValueRecursive(item);
                 });
             }

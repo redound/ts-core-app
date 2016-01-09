@@ -27,7 +27,7 @@ module TSCore.Data.Transform {
 
             _.each(this.availableIncludes, (include: any) => {
 
-                var includeMethod = 'include' + this._ucFirst(include);
+                var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
 
                 if (result[include] && this[includeMethod]) {
                     result[include] = this[includeMethod](result);
@@ -35,11 +35,6 @@ module TSCore.Data.Transform {
             });
 
             return result;
-        }
-
-        // TODO: Should be helper
-        protected _ucFirst(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
         }
 
         public static collection(data) {
