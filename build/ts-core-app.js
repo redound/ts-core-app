@@ -228,13 +228,6 @@ var TSCore;
         (function (Data) {
             var Transformers;
             (function (Transformers) {
-                var TreeWalker = (function () {
-                    function TreeWalker(data) {
-                    }
-                    TreeWalker.prototype.walk = function (callback) {
-                    };
-                    return TreeWalker;
-                })();
                 var JsonGraphTransformer = (function () {
                     function JsonGraphTransformer() {
                         this._aliases = new TSCore.Data.Dictionary();
@@ -244,26 +237,80 @@ var TSCore;
                         _.each(aliases, function (alias) { return _this._aliases.set(alias, key); });
                         return this;
                     };
-                    JsonGraphTransformer.prototype.transform = function (data) {
+                    JsonGraphTransformer.prototype.transform = function (rootResourceName, data) {
                         var _this = this;
-                        var results = new Data.JsonGraph();
-                        function resolveResource(resourceName, resource) {
+                        var results = {};
+                        this._findResourcesRecursive(rootResourceName, data, function (resourceName, resource) {
+                            var record = _.clone(resource);
+                            var childResources = {};
+                            _this._findResources(record, function (fromArray, childResourceName, childResource) {
+                                var childResourceRef = _this._createResourceRef(childResourceName, childResource);
+                                if (fromArray) {
+                                    childResources[childResourceName] = childResources[childResourceName] || [];
+                                    childResources[childResourceName].push(childResourceRef);
+                                }
+                                else {
+                                    childResources[childResourceName] = childResourceRef;
+                                }
+                            });
+                            _.each(childResources, function (childResource, childResourceName) {
+                                record[childResourceName] = childResource;
+                            });
+                            results[resourceName] = results[resourceName] || {};
+                            results[resourceName][record.id] = record;
+                        });
+                        results["results"] = _.map(results[rootResourceName], function (resource) {
+                            return _this._createResourceRef(rootResourceName, resource);
+                        });
+                        return new Data.JsonGraph(results);
+                    };
+                    JsonGraphTransformer.prototype._findResourcesRecursive = function (alias, data, callback) {
+                        var _this = this;
+                        if (!_.isObject(data)) {
+                            return;
                         }
-                        var tree = new TreeWalker(data);
-                        tree.walk(function (value, alias) {
+                        if (alias) {
                             alias = alias.toString();
-                            if (!_this._aliases.contains(alias)) {
+                            if (this._aliases.contains(alias)) {
+                                var resourceName = this._aliases.get(alias);
+                                if (_.isArray(data)) {
+                                    _.each(data, function (resource) { return callback(resourceName, resource); });
+                                }
+                                else {
+                                    callback(resourceName, data);
+                                }
+                            }
+                        }
+                        _.each(data, function (value, key) { return _this._findResourcesRecursive(key, value, callback); });
+                    };
+                    JsonGraphTransformer.prototype._findResources = function (data, callback) {
+                        var _this = this;
+                        if (!_.isObject(data)) {
+                            return;
+                        }
+                        _.each(data, function (value, key) {
+                            if (!_.isObject(value)) {
                                 return;
                             }
-                            var resourceName = _this._aliases.get(alias);
-                            if (_.isArray(value)) {
-                                _.each(value, function (resource) { return resolveResource(resourceName, resource); });
-                            }
-                            else if (_.isObject(value)) {
-                                resolveResource(resourceName, value);
+                            if (key) {
+                                var alias = key.toString();
+                                if (_this._aliases.contains(alias)) {
+                                    var resourceName = _this._aliases.get(alias);
+                                    if (_.isArray(value)) {
+                                        _.each(value, function (resource) { return callback(true, resourceName, resource); });
+                                    }
+                                    else {
+                                        callback(false, resourceName, value);
+                                    }
+                                }
                             }
                         });
-                        return results;
+                    };
+                    JsonGraphTransformer.prototype._createResourceRef = function (resourceName, resource) {
+                        return {
+                            $type: "ref",
+                            value: [resourceName, resource.id]
+                        };
                     };
                     return JsonGraphTransformer;
                 })();
@@ -302,17 +349,17 @@ var TSCore;
                     if (resource) {
                         return resource
                             .query(query)
-                            .then(function (response) { return _this._transformQuery(response); });
+                            .then(function (response) { return _this._transformQuery(query, response); });
                     }
                 };
-                Service.prototype._transformQuery = function (response) {
+                Service.prototype._transformQuery = function (query, response) {
+                    var resourceName = query.getFrom();
                     var jsonGraphTransformer = new JsonGraphTransformer;
                     this._resources.each(function (key, value) {
                         jsonGraphTransformer.resource(key, [value.getSingleKey(), value.getMultipleKey()]);
                     });
-                    var graph = jsonGraphTransformer.transform(response);
-                    console.log('graph', graph);
-                    return null;
+                    var graph = jsonGraphTransformer.transform(resourceName, response);
+                    return graph.get(["results"]);
                 };
                 Service.prototype.create = function (resourceName, data) {
                     return null;

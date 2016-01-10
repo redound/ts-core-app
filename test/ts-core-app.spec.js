@@ -61,10 +61,25 @@ describe("TSCore.App.Data.JsonGraph", function () {
                     date: new Date(),
                     users: []
                 }
-            }
+            },
+            results: [{
+                    $type: "ref",
+                    value: ["projects", 1]
+                }, {
+                    $type: "ref",
+                    value: ["projects", 2]
+                }, {
+                    $type: "ref",
+                    value: ["projects", 3]
+                }]
         });
     });
     describe("get()", function () {
+        it("should resolve references from an array", function () {
+            var results = graph.get(["results"]);
+            console.log(results);
+            expect(1).toEqual(1);
+        });
         it("should return all users", function () {
             var users = graph.get(["users"]);
             console.log(users);

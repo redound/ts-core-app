@@ -35,12 +35,13 @@ module TSCore.App.Api {
             if (resource) {
                 return resource
                     .query(query)
-                    .then(response => this._transformQuery(response));
+                    .then(response => this._transformQuery(query, response));
             }
         }
 
-        protected _transformQuery(response: any): IDataSourceResponse {
+        protected _transformQuery(query: Query, response: any): IDataSourceResponse {
 
+            var resourceName = query.getFrom();
 
             var jsonGraphTransformer = new JsonGraphTransformer;
 
@@ -48,11 +49,9 @@ module TSCore.App.Api {
                 jsonGraphTransformer.resource(key, [value.getSingleKey(), value.getMultipleKey()]);
             });
 
-            var graph = jsonGraphTransformer.transform(response);
+            var graph = jsonGraphTransformer.transform(resourceName, response);
 
-            console.log('graph', graph);
-
-            return null;
+            return graph.get(["results"]);
         }
 
         public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>

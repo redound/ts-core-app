@@ -17,7 +17,7 @@ module TSCore.App.Data {
             return this._data;
         }
 
-        public get(path: string|number[]) {
+        public get(path: any[]) {
 
             path = path || [];
 
@@ -41,7 +41,7 @@ module TSCore.App.Data {
             return this.resolvePointerValueRecursive(pointer);
         }
 
-        public set(path: string|number[], value: any)
+        public set(path: any[], value: any)
         {
             // TODO: Implement
         }

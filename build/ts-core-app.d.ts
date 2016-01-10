@@ -67,7 +67,13 @@ declare module TSCore.App.Data.Transformers {
     class JsonGraphTransformer {
         protected _aliases: TSCore.Data.Dictionary<string, string>;
         resource(key: string, aliases: string[]): JsonGraphTransformer;
-        transform(data: any): JsonGraph;
+        transform(rootResourceName: string, data: any): JsonGraph;
+        protected _findResourcesRecursive(alias: any, data: any, callback: any): void;
+        protected _findResources(data: any, callback: any): void;
+        protected _createResourceRef(resourceName: string, resource: any): {
+            $type: string;
+            value: any[];
+        };
     }
 }
 declare module TSCore.App.Api {
@@ -82,7 +88,7 @@ declare module TSCore.App.Api {
         getQueryTransformer(): any;
         resource(name: string, resource: Resource): Service;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
-        protected _transformQuery(response: any): IDataSourceResponse;
+        protected _transformQuery(query: Query, response: any): IDataSourceResponse;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
@@ -187,8 +193,8 @@ declare module TSCore.App.Data {
         protected _data: any;
         constructor(data?: any);
         getData(): any;
-        get(path: string | number[]): any;
-        set(path: string | number[], value: any): void;
+        get(path: any[]): any;
+        set(path: any[], value: any): void;
         merge(graph: JsonGraph): void;
         mergeData(data: any): void;
         protected resolvePointerValueRecursive(value: any): any;

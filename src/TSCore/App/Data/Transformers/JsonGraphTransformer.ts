@@ -1,17 +1,5 @@
 module TSCore.App.Data.Transformers {
 
-    class TreeWalker {
-
-        public constructor(data) {
-
-        }
-
-        public walk(callback) {
-
-
-        }
-    }
-
     export class JsonGraphTransformer {
 
         protected _aliases: TSCore.Data.Dictionary<string, string> = new TSCore.Data.Dictionary<string, string>();
@@ -21,38 +9,111 @@ module TSCore.App.Data.Transformers {
             return this;
         }
 
-        public transform(data: any): JsonGraph {
+        public transform(rootResourceName: string, data: any): JsonGraph {
 
-            var results = new JsonGraph();
+            var results = {};
 
-            function resolveResource(resourceName: string, resource: any) {
+            this._findResourcesRecursive(rootResourceName, data, (resourceName: string, resource: any) => {
 
+                var record = _.clone(resource);
+                var childResources: any = {};
 
+                this._findResources(record, (fromArray: boolean, childResourceName: string, childResource: any) => {
+
+                    var childResourceRef = this._createResourceRef(childResourceName, childResource);
+
+                    if (fromArray) {
+                        childResources[childResourceName] = childResources[childResourceName] || [];
+                        childResources[childResourceName].push(childResourceRef);
+                    } else {
+                        childResources[childResourceName] = childResourceRef;
+                    }
+
+                });
+
+                _.each(childResources, (childResource: any, childResourceName: string) => {
+                    record[childResourceName] = childResource;
+                });
+
+                results[resourceName] = results[resourceName] || {};
+                results[resourceName][record.id] = record;
+            });
+
+            results["results"] = _.map(results[rootResourceName], (resource) => {
+                return this._createResourceRef(rootResourceName, resource);
+            });
+
+            return new JsonGraph(results);
+        }
+
+        protected _findResourcesRecursive(alias, data, callback) {
+
+            if (!_.isObject(data)) {
+                return;
             }
 
-            var tree = new TreeWalker(data);
-
-            tree.walk((value: any, alias: any) => {
+            if (alias) {
 
                 alias = alias.toString();
 
-                if (!this._aliases.contains(alias)) {
+                if (this._aliases.contains(alias)) {
+
+                    var resourceName = this._aliases.get(alias);
+
+                    if (_.isArray(data)) {
+
+                        _.each(data, resource => callback(resourceName, resource));
+
+                    } else {
+
+                        callback(resourceName, data);
+
+                    }
+                }
+            }
+
+            _.each(data, (value, key) => this._findResourcesRecursive(key, value, callback));
+        }
+
+        protected _findResources(data, callback) {
+
+            if (!_.isObject(data)) {
+                return;
+            }
+
+            _.each(data, (value: any, key) => {
+
+                if (!_.isObject(value)) {
                     return;
                 }
 
-                var resourceName = this._aliases.get(alias);
+                if (key) {
 
-                if (_.isArray(value)) {
+                    var alias = key.toString();
 
-                    _.each(value, resource => resolveResource(resourceName, resource));
-                }
-                else if (_.isObject(value)) {
+                    if (this._aliases.contains(alias)) {
+                        var resourceName = this._aliases.get(alias);
 
-                    resolveResource(resourceName, value);
+                        if (_.isArray(value)) {
+
+                            _.each(value, resource => callback(true, resourceName, resource));
+
+                        } else {
+
+                            callback(false, resourceName, value);
+
+                        }
+                    }
                 }
             });
+        }
 
-            return results;
+        protected _createResourceRef(resourceName: string, resource: any) {
+
+            return {
+                $type: "ref",
+                value: [resourceName, resource.id]
+            };
         }
     }
 }
