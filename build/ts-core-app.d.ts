@@ -363,8 +363,10 @@ declare module TSCore.App.Data {
 }
 declare module TSCore.App.Data.Graph {
     class Builder {
-        protected _resourceForKeyCallback: any;
-        resourceForKey(callback: any): void;
+        protected _resourceForResourceNameCallback: any;
+        protected _resourceNameForAliasCallback: any;
+        resourceForResourceName(callback: any): void;
+        resourceNameForAlias(callback: any): void;
         build(data: any, rootResourceName?: any): Graph;
         protected _findResourcesRecursive(alias: any, data: any, callback: any): void;
         protected _findResources(data: any, callback: any): void;
@@ -396,7 +398,8 @@ declare module TSCore.App.Data.DataSources {
             data: Graph.Graph;
             results: any;
         };
-        protected _resourceForKey(key: string): string;
+        protected _resourceForResourceName(name: string): IResource;
+        protected _resourceNameForAlias(key: string): string;
         protected _getResourcesAliasMap(): TSCore.Data.Dictionary<string, string>;
     }
 }

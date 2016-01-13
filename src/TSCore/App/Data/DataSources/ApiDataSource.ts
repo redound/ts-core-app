@@ -84,7 +84,8 @@ module TSCore.App.Data.DataSources {
 
             var builder = new Builder;
 
-            builder.resourceForKey(key => this._resourceForKey(key));
+            builder.resourceForResourceName(name => this._resourceForResourceName(name));
+            builder.resourceNameForAlias(key => this._resourceNameForAlias(key));
 
             var graph = builder.build(response, resourceName);
 
@@ -102,7 +103,11 @@ module TSCore.App.Data.DataSources {
             };
         }
 
-        protected _resourceForKey(key: string) {
+        protected _resourceForResourceName(name: string) {
+            return this.getDataService().getResource(name);
+        }
+
+        protected _resourceNameForAlias(key: string) {
 
             var aliases = this._getResourcesAliasMap();
             return aliases.get(key);

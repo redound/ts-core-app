@@ -1195,18 +1195,25 @@ var TSCore;
                 var Builder = (function () {
                     function Builder() {
                     }
-                    Builder.prototype.resourceForKey = function (callback) {
-                        this._resourceForKeyCallback = callback;
+                    Builder.prototype.resourceForResourceName = function (callback) {
+                        this._resourceForResourceNameCallback = callback;
+                    };
+                    Builder.prototype.resourceNameForAlias = function (callback) {
+                        this._resourceNameForAliasCallback = callback;
                     };
                     Builder.prototype.build = function (data, rootResourceName) {
                         var _this = this;
                         if (rootResourceName === void 0) { rootResourceName = null; }
                         var results = {};
                         this._findResourcesRecursive(rootResourceName, data, function (resourceName, resource) {
+                            var rootResource = _this._resourceForResourceNameCallback(rootResourceName);
                             var record = _.clone(resource);
                             var childResources = {};
-                            _this._findResources(record, function (fromArray, childResourceName, childResource) {
-                                var childResourceRef = new Graph.Reference(childResourceName, childResource.id);
+                            _this._findResources(record, function (fromArray, childResourceName, childItem) {
+                                var childResource = _this._resourceForResourceNameCallback(childResourceName);
+                                var primaryKey = childResource.getModel().primaryKey();
+                                var id = childItem[primaryKey];
+                                var childResourceRef = new Graph.Reference(childResourceName, id);
                                 if (fromArray) {
                                     childResources[childResourceName] = childResources[childResourceName] || [];
                                     childResources[childResourceName].push(childResourceRef);
@@ -1218,8 +1225,10 @@ var TSCore;
                             _.each(childResources, function (childResource, childResourceName) {
                                 record[childResourceName] = childResource;
                             });
+                            var primaryKey = rootResource.getModel().primaryKey();
+                            var id = record[primaryKey];
                             results[resourceName] = results[resourceName] || {};
-                            results[resourceName][record.id] = record;
+                            results[resourceName][id] = record;
                         });
                         return new Graph.Graph(results);
                     };
@@ -1230,7 +1239,7 @@ var TSCore;
                         }
                         if (alias) {
                             alias = alias.toString();
-                            var resourceName = this._resourceForKeyCallback(alias);
+                            var resourceName = this._resourceNameForAliasCallback(alias);
                             if (resourceName) {
                                 if (_.isArray(data)) {
                                     _.each(data, function (resource) { return callback(resourceName, resource); });
@@ -1253,7 +1262,7 @@ var TSCore;
                             }
                             if (key) {
                                 var alias = key.toString();
-                                var resourceName = _this._resourceForKeyCallback(alias);
+                                var resourceName = _this._resourceNameForAliasCallback(alias);
                                 if (resourceName) {
                                     if (_.isArray(value)) {
                                         _.each(value, function (resource) { return callback(true, resourceName, resource); });
@@ -1337,7 +1346,8 @@ var TSCore;
                     ApiDataSource.prototype._createDataSourceResponse = function (resourceName, resource, response) {
                         var _this = this;
                         var builder = new Builder;
-                        builder.resourceForKey(function (key) { return _this._resourceForKey(key); });
+                        builder.resourceForResourceName(function (name) { return _this._resourceForResourceName(name); });
+                        builder.resourceNameForAlias(function (key) { return _this._resourceNameForAlias(key); });
                         var graph = builder.build(response, resourceName);
                         var results = graph.getItems(resourceName);
                         var primaryKey = resource.getModel().primaryKey();
@@ -1349,7 +1359,10 @@ var TSCore;
                             results: results
                         };
                     };
-                    ApiDataSource.prototype._resourceForKey = function (key) {
+                    ApiDataSource.prototype._resourceForResourceName = function (name) {
+                        return this.getDataService().getResource(name);
+                    };
+                    ApiDataSource.prototype._resourceNameForAlias = function (key) {
                         var aliases = this._getResourcesAliasMap();
                         return aliases.get(key);
                     };

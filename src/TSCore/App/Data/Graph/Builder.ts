@@ -4,10 +4,15 @@ module TSCore.App.Data.Graph {
 
     export class Builder {
 
-        protected _resourceForKeyCallback;
+        protected _resourceForResourceNameCallback;
+        protected _resourceNameForAliasCallback;
 
-        public resourceForKey(callback) {
-            this._resourceForKeyCallback = callback;
+        public resourceForResourceName(callback) {
+            this._resourceForResourceNameCallback = callback;
+        }
+
+        public resourceNameForAlias(callback) {
+            this._resourceNameForAliasCallback = callback;
         }
 
         /**
@@ -22,12 +27,18 @@ module TSCore.App.Data.Graph {
 
             this._findResourcesRecursive(rootResourceName, data, (resourceName: string, resource: any) => {
 
+                var rootResource = this._resourceForResourceNameCallback(rootResourceName);
+
                 var record = _.clone(resource);
                 var childResources: any = {};
 
-                this._findResources(record, (fromArray: boolean, childResourceName: string, childResource: any) => {
+                this._findResources(record, (fromArray: boolean, childResourceName: string, childItem: any) => {
 
-                    var childResourceRef = new Reference(childResourceName, childResource.id);
+                    var childResource = this._resourceForResourceNameCallback(childResourceName);
+                    var primaryKey = childResource.getModel().primaryKey();
+                    var id = childItem[primaryKey];
+
+                    var childResourceRef = new Reference(childResourceName, id);
 
                     if (fromArray) {
                         childResources[childResourceName] = childResources[childResourceName] || [];
@@ -42,8 +53,11 @@ module TSCore.App.Data.Graph {
                     record[childResourceName] = childResource;
                 });
 
+                var primaryKey = rootResource.getModel().primaryKey();
+                var id = record[primaryKey];
+
                 results[resourceName] = results[resourceName] || {};
-                results[resourceName][record.id] = record;
+                results[resourceName][id] = record;
             });
 
             return new Graph(results);
@@ -59,7 +73,7 @@ module TSCore.App.Data.Graph {
 
                 alias = alias.toString();
 
-                var resourceName = this._resourceForKeyCallback(alias);
+                var resourceName = this._resourceNameForAliasCallback(alias);
 
                 if (resourceName) {
 
@@ -94,7 +108,7 @@ module TSCore.App.Data.Graph {
 
                     var alias = key.toString();
 
-                    var resourceName = this._resourceForKeyCallback(alias);
+                    var resourceName = this._resourceNameForAliasCallback(alias);
 
                     if (resourceName) {
 
