@@ -1,8 +1,7 @@
-/// <reference path="./Model.ts" />
-
 module TSCore.App.Data.Model {
 
     import Exception = TSCore.Exception.Exception;
+    import Model = TSCore.Data.Model;
 
     export enum ActiveModelFlag {
         ALIVE,
@@ -10,7 +9,7 @@ module TSCore.App.Data.Model {
         REMOVED
     }
 
-    export class ActiveModel extends TSCore.App.Data.Model.Model {
+    export class ActiveModel extends Model {
 
         protected _flags: TSCore.Data.Collection<ActiveModelFlag> = new TSCore.Data.Collection<ActiveModelFlag>();
 

@@ -1,4 +1,29 @@
 /// <reference path="../../ts-core/build/ts-core.d.ts" />
+declare module TSCore.App.Data {
+    interface ITransformer {
+        new (): Transformer;
+        item(data: any): any;
+        collection(data: any): any;
+    }
+    class Transformer extends TSCore.BaseObject {
+        availableIncludes: any[];
+        transform(item: any): void;
+        collection(data: any): void[];
+        item(data: any): void;
+        static collection(data: any): void[];
+        static item(data: any): void;
+    }
+}
+declare module TSCore.App.Api {
+    import Transformer = TSCore.App.Data.Transformer;
+    interface IResource {
+        getPrefix(): string;
+        getTransformer(): Transformer;
+        getSingleKey(): string;
+        getMultipleKey(): string;
+        getRequestHandler(): RequestHandler;
+    }
+}
 declare module TSCore.App.Http {
     class RequestOptions {
         protected _headers: ng.IHttpRequestConfigHeaders;
@@ -28,24 +53,142 @@ declare module TSCore.App.Http {
         static delete(url?: string, urlParams?: {}): RequestOptions;
     }
 }
-declare module TSCore.App.Api {
+declare module TSCore.App.Data.Graph {
+    class Reference {
+        $type: string;
+        value: any[];
+        constructor(resourceName: string, resourceId: any);
+    }
+}
+declare module TSCore.App.Data.Graph {
+    class Graph {
+        protected _data: any;
+        constructor(data?: any);
+        clear(): void;
+        get(path?: any[], callback?: any): any;
+        protected _optimizePath(path?: any[]): any[];
+        set(path: any[], value: any): Graph;
+        setItem(resourceName: string, resourceId: any, resource: any): void;
+        getItem(resourceName: string, resourceId: any): any;
+        setItems(resourceName: string, items: any): void;
+        getItems(resourceName: string): any;
+        merge(graph: Graph): void;
+        mergeData(data: any): void;
+        protected _isReference(value: any): boolean;
+        protected _resolveValueRecursive(parentKey: any, key: any, value: any, callback?: any): any;
+        protected _isResourceName(resourceName: string): boolean;
+    }
+}
+declare module TSCore.App.Data {
+    import Reference = TSCore.App.Data.Graph.Reference;
+    import Graph = TSCore.App.Data.Graph.Graph;
+    interface IDataSourceResponse {
+        data: Graph;
+        results: Reference[];
+    }
+}
+declare module TSCore.App.Data {
     import Query = TSCore.App.Data.Query.Query;
+    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    interface IDataSource {
+        setDataService(dataService: Service): any;
+        getDataService(): Service;
+        execute(query: Query): ng.IPromise<IDataSourceResponse>;
+        create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
+        remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        clear(): ng.IPromise<any>;
+        importResponse(response: IDataSourceResponse): any;
+    }
+}
+declare module TSCore.App.Data.Query {
+    enum ConditionTypes {
+        AND = 0,
+        OR = 1,
+    }
+    enum ConditionOperators {
+        IS_EQUAL = 0,
+        IS_GREATER_THAN = 1,
+        IS_GREATER_THAN_OR_EQUAL = 2,
+        IS_IN = 3,
+        IS_LESS_THAN = 4,
+        IS_LESS_THAN_OR_EQUAL = 5,
+        IS_LIKE = 6,
+        IS_NOT_EQUAL = 7,
+    }
+    class Condition {
+        protected _type: ConditionTypes;
+        protected _field: string;
+        protected _operator: ConditionOperators;
+        protected _value: any;
+        constructor(type: ConditionTypes, field: string, operator: ConditionOperators, value: any);
+        getType(): ConditionTypes;
+        getField(): string;
+        getOperator(): ConditionOperators;
+        getValue(): any;
+    }
+}
+declare module TSCore.App.Data.Query {
+    enum SortDirections {
+        ASCENDING = 0,
+        DESCENDING = 1,
+    }
+    class Sorter {
+        protected _field: string;
+        protected _direction: SortDirections;
+        constructor(field: string, direction: SortDirections);
+        getField(): string;
+        getDirection(): SortDirections;
+    }
+}
+declare module TSCore.App.Data.Query {
+    import Condition = TSCore.App.Data.Query.Condition;
+    import Sorter = TSCore.App.Data.Query.Sorter;
+    class Query {
+        protected _from: string;
+        protected _offset: number;
+        protected _limit: number;
+        protected _fields: string[];
+        protected _conditions: Condition[];
+        protected _sorters: Sorter[];
+        protected _find: any;
+        from(from: string): Query;
+        getFrom(): string;
+        hasFrom(): boolean;
+        field(field: string): Query;
+        addManyFields(fields: string[]): Query;
+        getFields(): string[];
+        hasFields(): boolean;
+        offset(offset: number): Query;
+        getOffset(): number;
+        hasOffset(): boolean;
+        limit(limit: number): Query;
+        getLimit(): number;
+        hasLimit(): boolean;
+        condition(condition: Condition): Query;
+        addManyConditions(conditions: Condition[]): Query;
+        getConditions(): Condition[];
+        hasConditions(): boolean;
+        sorter(sorter: Sorter): Query;
+        addManySorters(sorters: Sorter[]): Query;
+        getSorters(): Sorter[];
+        hasSorters(): boolean;
+        find(id: any): Query;
+        getFind(): any;
+        hasFind(): boolean;
+        merge(query: Query): Query;
+        static from(from: any): Query;
+    }
+}
+declare module TSCore.App.Api {
     import RequestOptions = TSCore.App.Http.RequestOptions;
-    class Resource {
+    import Query = TSCore.App.Data.Query.Query;
+    class RequestHandler {
         protected httpService: TSCore.App.Http.Service;
-        protected _prefix: string;
-        protected _singleKey: string;
-        protected _multipleKey: string;
-        protected _transformer: any;
+        _resource: IResource;
         constructor(httpService: TSCore.App.Http.Service);
-        prefix(prefix: string): Resource;
-        getPrefix(): string;
-        singleKey(singleKey: string): Resource;
-        getSingleKey(): string;
-        multipleKey(multipleKey: string): Resource;
-        getMultipleKey(): string;
-        transformer(transformer: any): Resource;
-        getTransformer(): any;
+        setResource(resource: IResource): void;
+        getResource(): IResource;
         request(requestOptions: RequestOptions): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
         query(query: Query): ng.IPromise<any>;
         all(): ng.IPromise<any>;
@@ -63,37 +206,23 @@ declare module TSCore.App.Api {
         protected _transformSingle(response: ng.IHttpPromiseCallbackArg<{}>): any;
     }
 }
-declare module TSCore.App.Data.Transformers {
-    class JsonGraphTransformer {
-        protected _aliases: TSCore.Data.Dictionary<string, string>;
-        resource(key: string, aliases: string[]): JsonGraphTransformer;
-        transform(rootResourceName: string, data: any): JsonGraph;
-        protected _findResourcesRecursive(alias: any, data: any, callback: any): void;
-        protected _findResources(data: any, callback: any): void;
-        protected _createResourceRef(resourceName: string, resource: any): {
-            $type: string;
-            value: any[];
-        };
-    }
-}
 declare module TSCore.App.Api {
     import Query = TSCore.App.Data.Query.Query;
-    import IDataSource = TSCore.App.Data.IDataSource;
-    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
-    import Resource = TSCore.App.Api.Resource;
-    class Service implements IDataSource {
-        protected _queryTransformer: any;
-        protected _resources: TSCore.Data.Dictionary<string, Resource>;
-        queryTransformer(transformer: any): Service;
-        getQueryTransformer(): any;
-        resource(name: string, resource: Resource): Service;
-        execute(query: Query): ng.IPromise<IDataSourceResponse>;
-        protected _transformQuery(query: Query, response: any): IDataSourceResponse;
-        create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
-        update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
-        remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        clear(): ng.IPromise<any>;
-        importResponse(response: IDataSourceResponse): void;
+    class Service {
+        protected $q: any;
+        constructor($q: any);
+        protected _resources: TSCore.Data.Dictionary<string, IResource>;
+        manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
+        resource(name: string, resource: IResource): Service;
+        protected _registerRequestHandler(name: any, resource: any): void;
+        getResourceAsync(name: string): ng.IPromise<IResource>;
+        protected _getRequestHandler(resourceName: string): ng.IPromise<RequestHandler>;
+        execute(query: Query): ng.IPromise<any>;
+        all(resourceName: string): ng.IPromise<any>;
+        find(resourceName: string, resourceId: number): ng.IPromise<any>;
+        create(resourceName: string, data: any): ng.IPromise<any>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
+        remove(resourceName: string, resourceId: any): ng.IPromise<any>;
     }
 }
 declare module TSCore.App {
@@ -166,53 +295,14 @@ declare module TSCore.App.Constants.HttpMethods {
     const PUT: string;
     const DELETE: string;
 }
-declare module TSCore.App.Data {
-    import Query = TSCore.App.Data.Query.Query;
-    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
-    interface IDataSource {
-        execute(query: Query): ng.IPromise<IDataSourceResponse>;
-        create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
-        update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
-        remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        clear(): ng.IPromise<any>;
-        importResponse(response: IDataSourceResponse): any;
-    }
-}
-declare module TSCore.App.Data {
-    interface IDataSourceResponse {
-        data: JsonGraph;
-        results: [IJsonGraphReference];
-    }
-}
-declare module TSCore.App.Data {
-    interface IJsonGraphReference {
-        $type: string;
-        value: any;
-    }
-    class JsonGraph {
-        protected _data: any;
-        constructor(data?: any);
-        getData(): any;
-        get(path: any[]): any;
-        set(path: any[], value: any): void;
-        merge(graph: JsonGraph): void;
-        mergeData(data: any): void;
-        protected resolvePointerValueRecursive(value: any): any;
-        protected resolvePointerValue(value: any): any;
-    }
-}
 declare module TSCore.App.Data.Model {
-    class Model extends TSCore.Data.Model {
-        toObject(includeRelations?: boolean): {};
-    }
-}
-declare module TSCore.App.Data.Model {
+    import Model = TSCore.Data.Model;
     enum ActiveModelFlag {
         ALIVE = 0,
         CREATED = 1,
         REMOVED = 2,
     }
-    class ActiveModel extends TSCore.App.Data.Model.Model {
+    class ActiveModel extends Model {
         protected _flags: TSCore.Data.Collection<ActiveModelFlag>;
         protected _dataService: TSCore.App.Data.Service;
         protected _resourceName: string;
@@ -232,99 +322,25 @@ declare module TSCore.App.Data.Model {
         getResourceIdentifier(): string;
     }
 }
-declare module TSCore.App.Data.Query {
-    enum ConditionTypes {
-        AND = 0,
-        OR = 1,
-    }
-    enum ConditionOperators {
-        IS_EQUAL = 0,
-        IS_GREATER_THAN = 1,
-        IS_GREATER_THAN_OR_EQUAL = 2,
-        IS_IN = 3,
-        IS_LESS_THAN = 4,
-        IS_LESS_THAN_OR_EQUAL = 5,
-        IS_LIKE = 6,
-        IS_NOT_EQUAL = 7,
-    }
-    class Condition {
-        protected _type: ConditionTypes;
-        protected _field: string;
-        protected _operator: ConditionOperators;
-        protected _value: any;
-        constructor(type: ConditionTypes, field: string, operator: ConditionOperators, value: any);
-        getType(): ConditionTypes;
-        getField(): string;
-        getOperator(): ConditionOperators;
-        getValue(): any;
-    }
-}
-declare module TSCore.App.Data.Query {
-    import Condition = TSCore.App.Data.Query.Condition;
-    import Sorter = TSCore.App.Data.Query.Sorter;
-    class Query {
-        protected _from: string;
-        protected _offset: number;
-        protected _limit: number;
-        protected _fields: string[];
-        protected _conditions: Condition[];
-        protected _sorters: Sorter[];
-        protected _find: any;
-        from(from: string): Query;
-        getFrom(): string;
-        hasFrom(): boolean;
-        field(field: string): Query;
-        addManyFields(fields: string[]): Query;
-        getFields(): string[];
-        hasFields(): boolean;
-        offset(offset: number): Query;
-        getOffset(): number;
-        hasOffset(): boolean;
-        limit(limit: number): Query;
-        getLimit(): number;
-        hasLimit(): boolean;
-        condition(condition: Condition): Query;
-        addManyConditions(conditions: Condition[]): Query;
-        getConditions(): Condition[];
-        hasConditions(): boolean;
-        sorter(sorter: Sorter): Query;
-        addManySorters(sorters: Sorter[]): Query;
-        getSorters(): Sorter[];
-        hasSorters(): boolean;
-        find(id: any): Query;
-        getFind(): any;
-        hasFind(): boolean;
-        merge(query: Query): Query;
-        static from(from: any): Query;
-    }
-}
-declare module TSCore.App.Data.Query {
-    enum SortDirections {
-        ASCENDING = 0,
-        DESCENDING = 1,
-    }
-    class Sorter {
-        protected _field: string;
-        protected _direction: SortDirections;
-        constructor(field: string, direction: SortDirections);
-        getField(): string;
-        getDirection(): SortDirections;
-    }
-}
 declare module TSCore.App.Data {
     import List = TSCore.Data.List;
-    import Model = TSCore.App.Data.Model.Model;
+    import ModelList = TSCore.Data.ModelList;
     import Query = TSCore.App.Data.Query.Query;
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
-    import ModelList = TSCore.Data.ModelList;
+    import Model = TSCore.Data.Model;
     class Service {
         protected $q: ng.IQService;
         protected _sources: List<IDataSource>;
-        static $inject: string[];
+        protected _resources: TSCore.Data.Dictionary<string, IResource>;
         constructor($q: ng.IQService);
         source(source: IDataSource): Service;
         getSources(): List<IDataSource>;
+        manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
+        resource(name: string, resource: IResource): Service;
+        getResources(): TSCore.Data.Dictionary<string, IResource>;
+        getResource(name: string): IResource;
+        getResourceAsync(name: string): ng.IPromise<Resource>;
         create(resourceName: string, data: any): ng.IPromise<Model>;
         createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<Model>;
@@ -340,19 +356,71 @@ declare module TSCore.App.Data {
         protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
         protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
-        protected _createModels(data: IDataSourceResponse): ModelList<Model>;
+        protected _createModels(response: IDataSourceResponse): ModelList<Model>;
         protected _updateModel(model: Model, data: IDataSourceResponse): void;
         protected _removeModel(model: any): void;
     }
 }
-declare module TSCore.Data.Transform {
-    class Transformer extends TSCore.BaseObject {
-        availableIncludes: any[];
-        transform(item: any): void;
-        collection(data: any): void[];
-        item(data: any): void;
-        static collection(data: any): void[];
-        static item(data: any): void;
+declare module TSCore.App.Data.Graph {
+    class Builder {
+        protected _resourceForKeyCallback: any;
+        resourceForKey(callback: any): void;
+        build(data: any, rootResourceName?: any): Graph;
+        protected _findResourcesRecursive(alias: any, data: any, callback: any): void;
+        protected _findResources(data: any, callback: any): void;
+    }
+}
+declare module TSCore.App.Data.DataSources {
+    import IDataSource = TSCore.App.Data.IDataSource;
+    import Query = TSCore.App.Data.Query.Query;
+    import DataService = TSCore.App.Data.Service;
+    class ApiDataSource implements IDataSource {
+        protected $q: ng.IQService;
+        protected apiService: TSCore.App.Api.Service;
+        protected _dataService: DataService;
+        protected _resourceAliasMap: TSCore.Data.Dictionary<string, string>;
+        constructor($q: ng.IQService, apiService: TSCore.App.Api.Service);
+        setDataService(service: DataService): void;
+        getDataService(): DataService;
+        execute(query: Query): ng.IPromise<IDataSourceResponse>;
+        create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
+        remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        clear(): ng.IPromise<any>;
+        importResponse(response: IDataSourceResponse): void;
+        protected _transformResponse(resourceName: string, response: any): ng.IPromise<{
+            data: Graph.Graph;
+            results: any;
+        }>;
+        protected _createDataSourceResponse(resourceName: any, resource: any, response: any): {
+            data: Graph.Graph;
+            results: any;
+        };
+        protected _resourceForKey(key: string): string;
+        protected _getResourcesAliasMap(): TSCore.Data.Dictionary<string, string>;
+    }
+}
+declare module TSCore.App.Data.DataSources {
+    import IDataSource = TSCore.App.Data.IDataSource;
+    import Query = TSCore.App.Data.Query.Query;
+    import DataService = TSCore.App.Data.Service;
+    class MemoryDataSource implements IDataSource {
+        protected _dataService: DataService;
+        setDataService(service: DataService): void;
+        getDataService(): DataService;
+        execute(query: Query): ng.IPromise<IDataSourceResponse>;
+        create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
+        remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        clear(): ng.IPromise<any>;
+        importResponse(response: IDataSourceResponse): void;
+    }
+}
+declare module TSCore.App.Data {
+    interface IResource {
+        getModel(): TSCore.Data.Model;
+        getSingleKey(): string;
+        getMultipleKey(): string;
     }
 }
 declare module TSCore.App.Http {
@@ -439,5 +507,31 @@ declare module TSCore.App.Interceptors {
         private _attachRouterEvents();
         private _$stateChangeStart(event, toState, toParams, fromState, fromParams);
         getFirstRoute(): any;
+    }
+}
+declare module TSCore.App {
+    import RequestHandler = TSCore.App.Api.RequestHandler;
+    import ITransformer = TSCore.App.Data.ITransformer;
+    import IModel = TSCore.Data.IModel;
+    class Resource {
+        protected _prefix: string;
+        protected _singleKey: string;
+        protected _multipleKey: string;
+        protected _model: IModel;
+        protected _requestHandler: RequestHandler;
+        protected _transformer: ITransformer;
+        protected _queryTransformer: any;
+        prefix(prefix: string): Resource;
+        getPrefix(): string;
+        singleKey(singleKey: string): Resource;
+        getSingleKey(): string;
+        multipleKey(multipleKey: string): Resource;
+        getMultipleKey(): string;
+        requestHandler(handler: RequestHandler): Resource;
+        getRequestHandler(): RequestHandler;
+        model(model: IModel): Resource;
+        getModel(): IModel;
+        transformer(transformer: ITransformer): Resource;
+        getTransformer(): ITransformer;
     }
 }

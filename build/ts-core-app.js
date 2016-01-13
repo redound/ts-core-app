@@ -1,3 +1,59 @@
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Transformer = (function (_super) {
+                __extends(Transformer, _super);
+                function Transformer() {
+                    _super.apply(this, arguments);
+                    this.availableIncludes = [];
+                }
+                Transformer.prototype.transform = function (item) {
+                };
+                Transformer.prototype.collection = function (data) {
+                    var _this = this;
+                    if (!data) {
+                        return null;
+                    }
+                    return _.map(data, function (item) { return _this.item(item); });
+                };
+                Transformer.prototype.item = function (data) {
+                    var _this = this;
+                    if (!data) {
+                        return null;
+                    }
+                    var result = this.transform(data);
+                    _.each(this.availableIncludes, function (include) {
+                        var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
+                        if (result[include] && _this[includeMethod]) {
+                            result[include] = _this[includeMethod](result);
+                        }
+                    });
+                    return result;
+                };
+                Transformer.collection = function (data) {
+                    var transformer = new this;
+                    return transformer.collection(data);
+                };
+                Transformer.item = function (data) {
+                    var transformer = new this;
+                    return transformer.item(data);
+                };
+                return Transformer;
+            })(TSCore.BaseObject);
+            Data.Transformer = Transformer;
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../Data/Transformer.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -113,111 +169,24 @@ var TSCore;
         })(Http = App.Http || (App.Http = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="../Http/RequestOptions.ts" />
 var TSCore;
 (function (TSCore) {
     var App;
     (function (App) {
-        var Api;
-        (function (Api) {
-            var RequestOptions = TSCore.App.Http.RequestOptions;
-            var Resource = (function () {
-                function Resource(httpService) {
-                    this.httpService = httpService;
-                }
-                Resource.prototype.prefix = function (prefix) {
-                    this._prefix = prefix;
-                    return this;
-                };
-                Resource.prototype.getPrefix = function () {
-                    return this._prefix;
-                };
-                Resource.prototype.singleKey = function (singleKey) {
-                    this._singleKey = singleKey;
-                    return this;
-                };
-                Resource.prototype.getSingleKey = function () {
-                    return this._singleKey;
-                };
-                Resource.prototype.multipleKey = function (multipleKey) {
-                    this._multipleKey = multipleKey;
-                    return this;
-                };
-                Resource.prototype.getMultipleKey = function () {
-                    return this._multipleKey;
-                };
-                Resource.prototype.transformer = function (transformer) {
-                    this._transformer = transformer;
-                    return this;
-                };
-                Resource.prototype.getTransformer = function () {
-                    return this._transformer;
-                };
-                Resource.prototype.request = function (requestOptions) {
-                    var relativeUrl = requestOptions.getUrl();
-                    requestOptions.url(this.getPrefix() + relativeUrl);
-                    return this.httpService.request(requestOptions);
-                };
-                Resource.prototype.query = function (query) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .get('/')).then(function (response) { return _this._transformQuery(response); });
-                };
-                Resource.prototype.all = function () {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .get('/')).then(function (response) { return _this._transformAll(response); });
-                };
-                Resource.prototype.find = function (id) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .get('/:id', { id: id })).then(function (response) { return _this._transformFind(response); });
-                };
-                Resource.prototype.create = function (data) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .post('/')
-                        .data(data)).then(function (response) { return _this._transformCreate(response); });
-                };
-                Resource.prototype.update = function (id, data) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .put('/:id', { id: id })
-                        .data(data)).then(function (response) { return _this._transformUpdate(response); });
-                };
-                Resource.prototype.remove = function (id) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .delete('/:id', { id: id })).then(function (response) { return _this._transformRemove(response); });
-                };
-                Resource.prototype._transformQuery = function (response) {
-                    return this._transformMultiple(response);
-                };
-                Resource.prototype._transformAll = function (response) {
-                    return this._transformMultiple(response);
-                };
-                Resource.prototype._transformFind = function (response) {
-                    return this._transformSingle(response);
-                };
-                Resource.prototype._transformCreate = function (response) {
-                    return this._transformSingle(response);
-                };
-                Resource.prototype._transformUpdate = function (response) {
-                    return this._transformSingle(response);
-                };
-                Resource.prototype._transformRemove = function (response) {
-                    return response;
-                };
-                Resource.prototype._transformMultiple = function (response) {
-                    return this._transformer.collection(response.data[this._multipleKey]);
-                };
-                Resource.prototype._transformSingle = function (response) {
-                    return this._transformer.item(response.data[this._singleKey]);
-                };
-                return Resource;
-            })();
-            Api.Resource = Resource;
-        })(Api = App.Api || (App.Api = {}));
+        var Data;
+        (function (Data) {
+            var Graph;
+            (function (Graph) {
+                var Reference = (function () {
+                    function Reference(resourceName, resourceId) {
+                        this.$type = "ref";
+                        this.value = [resourceName, resourceId];
+                    }
+                    return Reference;
+                })();
+                Graph.Reference = Reference;
+            })(Graph = Data.Graph || (Data.Graph = {}));
+        })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
 var TSCore;
@@ -226,154 +195,516 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
-            var Transformers;
-            (function (Transformers) {
-                var JsonGraphTransformer = (function () {
-                    function JsonGraphTransformer() {
-                        this._aliases = new TSCore.Data.Dictionary();
+            var Graph;
+            (function (Graph_1) {
+                var Graph = (function () {
+                    function Graph(data) {
+                        this.clear();
+                        this._data = data || {};
                     }
-                    JsonGraphTransformer.prototype.resource = function (key, aliases) {
-                        var _this = this;
-                        _.each(aliases, function (alias) { return _this._aliases.set(alias, key); });
+                    Graph.prototype.clear = function () {
+                        this._data = {};
+                    };
+                    Graph.prototype.get = function (path, callback) {
+                        path = this._optimizePath(path);
+                        if (!path) {
+                            return this._resolveValueRecursive(null, null, this._data, callback);
+                        }
+                        var root = this._data;
+                        var parentKey = null;
+                        var key = null;
+                        for (var i = 0; i < path.length; i++) {
+                            var part = path[i];
+                            if (root[part] !== void 0) {
+                                root = root[part];
+                                parentKey = key;
+                                key = part;
+                            }
+                            else {
+                                root = null;
+                                break;
+                            }
+                        }
+                        console.log('parentKey', parentKey, 'key', key);
+                        return this._resolveValueRecursive(parentKey, key, root, callback);
+                    };
+                    Graph.prototype._optimizePath = function (path) {
+                        if (!path) {
+                            return null;
+                        }
+                        var root = this._data;
+                        for (var i = 0; i < path.length; i++) {
+                            var part = path[i];
+                            var end = path.slice(i + 1, path.length);
+                            if (root[part] === void 0) {
+                                root = null;
+                                break;
+                            }
+                            root = root[part];
+                            if (this._isReference(root)) {
+                                var optimizedPath = root.value.concat(end);
+                                return this._optimizePath(optimizedPath);
+                            }
+                        }
+                        return root ? path : null;
+                    };
+                    Graph.prototype.set = function (path, value) {
+                        path = this._optimizePath(path);
+                        if (path && path.length) {
+                            var root = this._data;
+                            for (var i = 0; i < path.length; i++) {
+                                var part = path[i];
+                                if (i === path.length - 1) {
+                                    root[part] = value;
+                                }
+                                root = root[part];
+                            }
+                            return this;
+                        }
+                        this._data = value;
                         return this;
                     };
-                    JsonGraphTransformer.prototype.transform = function (rootResourceName, data) {
+                    Graph.prototype.setItem = function (resourceName, resourceId, resource) {
+                        this.set([resourceName, resourceId], resource);
+                    };
+                    Graph.prototype.getItem = function (resourceName, resourceId) {
+                        return this.get([resourceName, resourceId]);
+                    };
+                    Graph.prototype.setItems = function (resourceName, items) {
+                        this.set([resourceName], items);
+                    };
+                    Graph.prototype.getItems = function (resourceName) {
+                        return this.get([resourceName]);
+                    };
+                    Graph.prototype.merge = function (graph) {
+                        this.mergeData(graph.get());
+                    };
+                    Graph.prototype.mergeData = function (data) {
+                    };
+                    Graph.prototype._isReference = function (value) {
+                        return (value && value.$type && value.$type == "ref");
+                    };
+                    Graph.prototype._resolveValueRecursive = function (parentKey, key, value, callback) {
                         var _this = this;
-                        var results = {};
-                        this._findResourcesRecursive(rootResourceName, data, function (resourceName, resource) {
-                            var record = _.clone(resource);
-                            var childResources = {};
-                            _this._findResources(record, function (fromArray, childResourceName, childResource) {
-                                var childResourceRef = _this._createResourceRef(childResourceName, childResource);
-                                if (fromArray) {
-                                    childResources[childResourceName] = childResources[childResourceName] || [];
-                                    childResources[childResourceName].push(childResourceRef);
-                                }
-                                else {
-                                    childResources[childResourceName] = childResourceRef;
-                                }
+                        if (this._isReference(value)) {
+                            value = this.get(value.value, callback);
+                        }
+                        if (_.isArray(value)) {
+                            value = _.map(value, function (subValue, subKey) {
+                                return _this._resolveValueRecursive(key, subKey, subValue, callback);
                             });
-                            _.each(childResources, function (childResource, childResourceName) {
-                                record[childResourceName] = childResource;
+                        }
+                        else if (_.isObject(value)) {
+                            value = _.mapObject(value, function (subValue, subKey) {
+                                return _this._resolveValueRecursive(key, subKey, subValue, callback);
                             });
-                            results[resourceName] = results[resourceName] || {};
-                            results[resourceName][record.id] = record;
-                        });
-                        results["results"] = _.map(results[rootResourceName], function (resource) {
-                            return _this._createResourceRef(rootResourceName, resource);
-                        });
-                        return new Data.JsonGraph(results);
-                    };
-                    JsonGraphTransformer.prototype._findResourcesRecursive = function (alias, data, callback) {
-                        var _this = this;
-                        if (!_.isObject(data)) {
-                            return;
-                        }
-                        if (alias) {
-                            alias = alias.toString();
-                            if (this._aliases.contains(alias)) {
-                                var resourceName = this._aliases.get(alias);
-                                if (_.isArray(data)) {
-                                    _.each(data, function (resource) { return callback(resourceName, resource); });
-                                }
-                                else {
-                                    callback(resourceName, data);
-                                }
+                            if (this._isResourceName(key)) {
+                                value = _.values(value);
                             }
                         }
-                        _.each(data, function (value, key) { return _this._findResourcesRecursive(key, value, callback); });
-                    };
-                    JsonGraphTransformer.prototype._findResources = function (data, callback) {
-                        var _this = this;
-                        if (!_.isObject(data)) {
-                            return;
+                        if (!_.isArray(value) && callback) {
+                            if (this._isResourceName(key)) {
+                                value = callback(key, value);
+                            }
+                            else if (this._isResourceName(parentKey)) {
+                                value = callback(parentKey, value);
+                            }
                         }
-                        _.each(data, function (value, key) {
-                            if (!_.isObject(value)) {
-                                return;
-                            }
-                            if (key) {
-                                var alias = key.toString();
-                                if (_this._aliases.contains(alias)) {
-                                    var resourceName = _this._aliases.get(alias);
-                                    if (_.isArray(value)) {
-                                        _.each(value, function (resource) { return callback(true, resourceName, resource); });
-                                    }
-                                    else {
-                                        callback(false, resourceName, value);
-                                    }
-                                }
-                            }
-                        });
+                        return value;
                     };
-                    JsonGraphTransformer.prototype._createResourceRef = function (resourceName, resource) {
-                        return {
-                            $type: "ref",
-                            value: [resourceName, resource.id]
-                        };
+                    Graph.prototype._isResourceName = function (resourceName) {
+                        return (this._data[resourceName] !== void 0);
                     };
-                    return JsonGraphTransformer;
+                    return Graph;
                 })();
-                Transformers.JsonGraphTransformer = JsonGraphTransformer;
-            })(Transformers = Data.Transformers || (Data.Transformers = {}));
+                Graph_1.Graph = Graph;
+            })(Graph = Data.Graph || (Data.Graph = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="../Data/Transformers/JsonGraphTransformer.ts" />
+///<reference path="Graph/Reference.ts"/>
+///<reference path="Graph/Graph.ts"/>
+///<reference path="../Data/Query/Query.ts"/>
+///<reference path="../Data/IDataSourceResponse.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                (function (ConditionTypes) {
+                    ConditionTypes[ConditionTypes["AND"] = 0] = "AND";
+                    ConditionTypes[ConditionTypes["OR"] = 1] = "OR";
+                })(Query.ConditionTypes || (Query.ConditionTypes = {}));
+                var ConditionTypes = Query.ConditionTypes;
+                (function (ConditionOperators) {
+                    ConditionOperators[ConditionOperators["IS_EQUAL"] = 0] = "IS_EQUAL";
+                    ConditionOperators[ConditionOperators["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
+                    ConditionOperators[ConditionOperators["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
+                    ConditionOperators[ConditionOperators["IS_IN"] = 3] = "IS_IN";
+                    ConditionOperators[ConditionOperators["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
+                    ConditionOperators[ConditionOperators["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
+                    ConditionOperators[ConditionOperators["IS_LIKE"] = 6] = "IS_LIKE";
+                    ConditionOperators[ConditionOperators["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
+                })(Query.ConditionOperators || (Query.ConditionOperators = {}));
+                var ConditionOperators = Query.ConditionOperators;
+                var Condition = (function () {
+                    function Condition(type, field, operator, value) {
+                        this._type = type;
+                        this._field = field;
+                        this._operator = operator;
+                        this._value = value;
+                    }
+                    Condition.prototype.getType = function () {
+                        return this._type;
+                    };
+                    Condition.prototype.getField = function () {
+                        return this._field;
+                    };
+                    Condition.prototype.getOperator = function () {
+                        return this._operator;
+                    };
+                    Condition.prototype.getValue = function () {
+                        return this._value;
+                    };
+                    return Condition;
+                })();
+                Query.Condition = Condition;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                (function (SortDirections) {
+                    SortDirections[SortDirections["ASCENDING"] = 0] = "ASCENDING";
+                    SortDirections[SortDirections["DESCENDING"] = 1] = "DESCENDING";
+                })(Query.SortDirections || (Query.SortDirections = {}));
+                var SortDirections = Query.SortDirections;
+                var Sorter = (function () {
+                    function Sorter(field, direction) {
+                        this._field = field;
+                        this._direction = direction;
+                    }
+                    Sorter.prototype.getField = function () {
+                        return this._field;
+                    };
+                    Sorter.prototype.getDirection = function () {
+                        return this._direction;
+                    };
+                    return Sorter;
+                })();
+                Query.Sorter = Sorter;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../IDataSource.ts"/>
+///<reference path="../Query/Condition.ts"/>
+///<reference path="../Query/Sorter.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query_1) {
+                var Query = (function () {
+                    function Query() {
+                        this._offset = null;
+                        this._limit = null;
+                        this._fields = [];
+                        this._conditions = [];
+                        this._sorters = [];
+                    }
+                    Query.prototype.from = function (from) {
+                        this._from = from;
+                        return this;
+                    };
+                    Query.prototype.getFrom = function () {
+                        return this._from;
+                    };
+                    Query.prototype.hasFrom = function () {
+                        return !!this._from;
+                    };
+                    Query.prototype.field = function (field) {
+                        this._fields.push(field);
+                        return this;
+                    };
+                    Query.prototype.addManyFields = function (fields) {
+                        this._fields = this._fields.concat(fields);
+                        return this;
+                    };
+                    Query.prototype.getFields = function () {
+                        return this._fields;
+                    };
+                    Query.prototype.hasFields = function () {
+                        return (this._fields.length > 0);
+                    };
+                    Query.prototype.offset = function (offset) {
+                        this._offset = offset;
+                        return this;
+                    };
+                    Query.prototype.getOffset = function () {
+                        return this._offset;
+                    };
+                    Query.prototype.hasOffset = function () {
+                        return _.isNumber(this._offset);
+                    };
+                    Query.prototype.limit = function (limit) {
+                        this._limit = limit;
+                        return this;
+                    };
+                    Query.prototype.getLimit = function () {
+                        return this._limit;
+                    };
+                    Query.prototype.hasLimit = function () {
+                        return _.isNumber(this._limit);
+                    };
+                    Query.prototype.condition = function (condition) {
+                        this._conditions.push(condition);
+                        return this;
+                    };
+                    Query.prototype.addManyConditions = function (conditions) {
+                        this._conditions = this._conditions.concat(conditions);
+                        return this;
+                    };
+                    Query.prototype.getConditions = function () {
+                        return this._conditions;
+                    };
+                    Query.prototype.hasConditions = function () {
+                        return !!(this._conditions.length > 0);
+                    };
+                    Query.prototype.sorter = function (sorter) {
+                        this._sorters.push(sorter);
+                        return this;
+                    };
+                    Query.prototype.addManySorters = function (sorters) {
+                        this._sorters = this._sorters.concat(sorters);
+                        return this;
+                    };
+                    Query.prototype.getSorters = function () {
+                        return this._sorters;
+                    };
+                    Query.prototype.hasSorters = function () {
+                        return (this._sorters.length > 0);
+                    };
+                    Query.prototype.find = function (id) {
+                        this._find = id;
+                        return this;
+                    };
+                    Query.prototype.getFind = function () {
+                        return this._find;
+                    };
+                    Query.prototype.hasFind = function () {
+                        return !!this._find;
+                    };
+                    Query.prototype.merge = function (query) {
+                        if (query.hasFrom()) {
+                            this.from(query.getFrom());
+                        }
+                        if (query.hasFields()) {
+                            this.addManyFields(query.getFields());
+                        }
+                        if (query.hasOffset()) {
+                            this.offset(query.getOffset());
+                        }
+                        if (query.hasLimit()) {
+                            this.limit(query.getLimit());
+                        }
+                        if (query.hasConditions()) {
+                            this.addManyConditions(query.getConditions());
+                        }
+                        if (query.hasSorters()) {
+                            this.addManySorters(query.getSorters());
+                        }
+                        if (query.hasFind()) {
+                            this.find(query.getFind());
+                        }
+                        return this;
+                    };
+                    Query.from = function (from) {
+                        return (new this).from(from);
+                    };
+                    return Query;
+                })();
+                Query_1.Query = Query;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../Http/RequestOptions.ts"/>
+///<reference path="../Data/Query/Query.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
     (function (App) {
         var Api;
         (function (Api) {
-            var JsonGraphTransformer = TSCore.App.Data.Transformers.JsonGraphTransformer;
+            var RequestOptions = TSCore.App.Http.RequestOptions;
+            var RequestHandler = (function () {
+                function RequestHandler(httpService) {
+                    this.httpService = httpService;
+                }
+                RequestHandler.prototype.setResource = function (resource) {
+                    this._resource = resource;
+                };
+                RequestHandler.prototype.getResource = function () {
+                    return this._resource;
+                };
+                RequestHandler.prototype.request = function (requestOptions) {
+                    var prefix = this.getResource().getPrefix();
+                    var relativeUrl = requestOptions.getUrl();
+                    requestOptions.url(prefix + relativeUrl);
+                    return this.httpService.request(requestOptions);
+                };
+                RequestHandler.prototype.query = function (query) {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .get('/')).then(function (response) { return _this._transformQuery(response); });
+                };
+                RequestHandler.prototype.all = function () {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .get('/')).then(function (response) { return _this._transformAll(response); });
+                };
+                RequestHandler.prototype.find = function (id) {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .get('/:id', { id: id })).then(function (response) { return _this._transformFind(response); });
+                };
+                RequestHandler.prototype.create = function (data) {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .post('/')
+                        .data(data)).then(function (response) { return _this._transformCreate(response); });
+                };
+                RequestHandler.prototype.update = function (id, data) {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .put('/:id', { id: id })
+                        .data(data)).then(function (response) { return _this._transformUpdate(response); });
+                };
+                RequestHandler.prototype.remove = function (id) {
+                    var _this = this;
+                    return this.request(RequestOptions
+                        .delete('/:id', { id: id })).then(function (response) { return _this._transformRemove(response); });
+                };
+                RequestHandler.prototype._transformQuery = function (response) {
+                    return this._transformMultiple(response);
+                };
+                RequestHandler.prototype._transformAll = function (response) {
+                    return this._transformMultiple(response);
+                };
+                RequestHandler.prototype._transformFind = function (response) {
+                    return this._transformSingle(response);
+                };
+                RequestHandler.prototype._transformCreate = function (response) {
+                    return this._transformSingle(response);
+                };
+                RequestHandler.prototype._transformUpdate = function (response) {
+                    return this._transformSingle(response);
+                };
+                RequestHandler.prototype._transformRemove = function (response) {
+                    return response;
+                };
+                RequestHandler.prototype._transformMultiple = function (response) {
+                    var transformer = this.getResource().getTransformer();
+                    var multipleKey = this.getResource().getMultipleKey();
+                    return transformer.collection(response.data[multipleKey]);
+                };
+                RequestHandler.prototype._transformSingle = function (response) {
+                    var transformer = this.getResource().getTransformer();
+                    var singleKey = this.getResource().getSingleKey();
+                    return transformer.item(response.data[singleKey]);
+                };
+                return RequestHandler;
+            })();
+            Api.RequestHandler = RequestHandler;
+        })(Api = App.Api || (App.Api = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../Data/Query/Query.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Api;
+        (function (Api) {
             var Service = (function () {
-                function Service() {
+                function Service($q) {
+                    this.$q = $q;
                     this._resources = new TSCore.Data.Dictionary();
                 }
-                Service.prototype.queryTransformer = function (transformer) {
-                    this._queryTransformer = transformer;
+                Service.prototype.manyResources = function (resources) {
+                    var _this = this;
+                    resources.each(function (resourceName, resource) { return _this.resource(resourceName, resource); });
                     return this;
-                };
-                Service.prototype.getQueryTransformer = function () {
-                    return this._queryTransformer;
                 };
                 Service.prototype.resource = function (name, resource) {
                     this[name] = resource;
                     this._resources.set(name, resource);
+                    this._registerRequestHandler(name, resource);
                     return this;
                 };
-                Service.prototype.execute = function (query) {
-                    var _this = this;
-                    var resource = this._resources.get(query.getFrom());
-                    if (resource) {
-                        return resource
-                            .query(query)
-                            .then(function (response) { return _this._transformQuery(query, response); });
-                    }
+                Service.prototype._registerRequestHandler = function (name, resource) {
+                    var requestHandler = resource.getRequestHandler();
+                    requestHandler.setResource(resource);
+                    this[name] = requestHandler;
                 };
-                Service.prototype._transformQuery = function (query, response) {
-                    var resourceName = query.getFrom();
-                    var jsonGraphTransformer = new JsonGraphTransformer;
-                    this._resources.each(function (key, value) {
-                        jsonGraphTransformer.resource(key, [value.getSingleKey(), value.getMultipleKey()]);
+                Service.prototype.getResourceAsync = function (name) {
+                    var deferred = this.$q.defer();
+                    var resource = this._resources.get(name);
+                    if (!resource) {
+                        throw new TSCore.Exception.Exception('Resource `' + name + '` cannot be found');
+                    }
+                    deferred.resolve(resource);
+                    return deferred.promise;
+                };
+                Service.prototype._getRequestHandler = function (resourceName) {
+                    return this.getResourceAsync(resourceName).then(function (resource) {
+                        return resource.getRequestHandler();
                     });
-                    var graph = jsonGraphTransformer.transform(resourceName, response);
-                    return graph.get(["results"]);
+                };
+                Service.prototype.execute = function (query) {
+                    var resourceName = query.getFrom();
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.query(query);
+                    });
+                };
+                Service.prototype.all = function (resourceName) {
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.all();
+                    });
+                };
+                Service.prototype.find = function (resourceName, resourceId) {
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.find(resourceId);
+                    });
                 };
                 Service.prototype.create = function (resourceName, data) {
-                    return null;
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.create(data);
+                    });
                 };
                 Service.prototype.update = function (resourceName, resourceId, data) {
-                    return null;
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.update(resourceId, data);
+                    });
                 };
                 Service.prototype.remove = function (resourceName, resourceId) {
-                    return null;
-                };
-                Service.prototype.clear = function () {
-                    return null;
-                };
-                Service.prototype.importResponse = function (response) {
+                    return this._getRequestHandler(resourceName).then(function (requestHandler) {
+                        return requestHandler.remove(resourceId);
+                    });
                 };
                 return Service;
             })();
@@ -560,119 +891,16 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
-            var JsonGraph = (function () {
-                function JsonGraph(data) {
-                    this._data = data || {};
-                }
-                JsonGraph.prototype.getData = function () {
-                    return this._data;
-                };
-                JsonGraph.prototype.get = function (path) {
-                    var _this = this;
-                    path = path || [];
-                    var depth = 0;
-                    var pointer = this._data;
-                    _.each(path, function (identifier) {
-                        var pointerValue = pointer[identifier];
-                        if (pointerValue !== undefined) {
-                            pointer = _this.resolvePointerValue(pointerValue);
-                        }
-                        depth++;
-                    });
-                    if (depth === 1) {
-                        pointer = _.values(pointer);
-                    }
-                    return this.resolvePointerValueRecursive(pointer);
-                };
-                JsonGraph.prototype.set = function (path, value) {
-                };
-                JsonGraph.prototype.merge = function (graph) {
-                    this.mergeData(graph.getData());
-                };
-                JsonGraph.prototype.mergeData = function (data) {
-                };
-                JsonGraph.prototype.resolvePointerValueRecursive = function (value) {
-                    //alert('resolvePointerValueRecursive ' + JSON.stringify(value));
-                    var _this = this;
-                    value = this.resolvePointerValue(value);
-                    if (_.isArray(value)) {
-                        value = _.map(value, function (item) {
-                            return _this.resolvePointerValueRecursive(item);
-                        });
-                    }
-                    else if (_.isObject(value)) {
-                        value = _.mapObject(value, function (item) {
-                            return _this.resolvePointerValueRecursive(item);
-                        });
-                    }
-                    return value;
-                };
-                JsonGraph.prototype.resolvePointerValue = function (value) {
-                    if (value && value.$type && value.$type == "ref") {
-                        value = this.get(value.value);
-                    }
-                    return value;
-                };
-                return JsonGraph;
-            })();
-            Data.JsonGraph = JsonGraph;
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
             var Model;
             (function (Model_1) {
-                var Model = (function (_super) {
-                    __extends(Model, _super);
-                    function Model() {
-                        _super.apply(this, arguments);
-                    }
-                    Model.prototype.toObject = function (includeRelations) {
-                        if (includeRelations === void 0) { includeRelations = true; }
-                        var result = _super.prototype.toObject.call(this);
-                        if (includeRelations === false) {
-                            _.each(_.keys(this.static.relations()), function (key) {
-                                if (result[key]) {
-                                    delete result[key];
-                                }
-                            });
-                        }
-                        return result;
-                    };
-                    return Model;
-                })(TSCore.Data.Model);
-                Model_1.Model = Model;
-            })(Model = Data.Model || (Data.Model = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-/// <reference path="./Model.ts" />
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Model;
-            (function (Model) {
                 var Exception = TSCore.Exception.Exception;
+                var Model = TSCore.Data.Model;
                 (function (ActiveModelFlag) {
                     ActiveModelFlag[ActiveModelFlag["ALIVE"] = 0] = "ALIVE";
                     ActiveModelFlag[ActiveModelFlag["CREATED"] = 1] = "CREATED";
                     ActiveModelFlag[ActiveModelFlag["REMOVED"] = 2] = "REMOVED";
-                })(Model.ActiveModelFlag || (Model.ActiveModelFlag = {}));
-                var ActiveModelFlag = Model.ActiveModelFlag;
+                })(Model_1.ActiveModelFlag || (Model_1.ActiveModelFlag = {}));
+                var ActiveModelFlag = Model_1.ActiveModelFlag;
                 var ActiveModel = (function (_super) {
                     __extends(ActiveModel, _super);
                     function ActiveModel() {
@@ -749,225 +977,16 @@ var TSCore;
                         return identifier;
                     };
                     return ActiveModel;
-                })(TSCore.App.Data.Model.Model);
-                Model.ActiveModel = ActiveModel;
+                })(Model);
+                Model_1.ActiveModel = ActiveModel;
             })(Model = Data.Model || (Data.Model = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Query;
-            (function (Query) {
-                (function (ConditionTypes) {
-                    ConditionTypes[ConditionTypes["AND"] = 0] = "AND";
-                    ConditionTypes[ConditionTypes["OR"] = 1] = "OR";
-                })(Query.ConditionTypes || (Query.ConditionTypes = {}));
-                var ConditionTypes = Query.ConditionTypes;
-                (function (ConditionOperators) {
-                    ConditionOperators[ConditionOperators["IS_EQUAL"] = 0] = "IS_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
-                    ConditionOperators[ConditionOperators["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_IN"] = 3] = "IS_IN";
-                    ConditionOperators[ConditionOperators["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
-                    ConditionOperators[ConditionOperators["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_LIKE"] = 6] = "IS_LIKE";
-                    ConditionOperators[ConditionOperators["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
-                })(Query.ConditionOperators || (Query.ConditionOperators = {}));
-                var ConditionOperators = Query.ConditionOperators;
-                var Condition = (function () {
-                    function Condition(type, field, operator, value) {
-                        this._type = type;
-                        this._field = field;
-                        this._operator = operator;
-                        this._value = value;
-                    }
-                    Condition.prototype.getType = function () {
-                        return this._type;
-                    };
-                    Condition.prototype.getField = function () {
-                        return this._field;
-                    };
-                    Condition.prototype.getOperator = function () {
-                        return this._operator;
-                    };
-                    Condition.prototype.getValue = function () {
-                        return this._value;
-                    };
-                    return Condition;
-                })();
-                Query.Condition = Condition;
-            })(Query = Data.Query || (Data.Query = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Query;
-            (function (Query_1) {
-                var Query = (function () {
-                    function Query() {
-                        this._offset = null;
-                        this._limit = null;
-                        this._fields = [];
-                        this._conditions = [];
-                        this._sorters = [];
-                    }
-                    Query.prototype.from = function (from) {
-                        this._from = from;
-                        return this;
-                    };
-                    Query.prototype.getFrom = function () {
-                        return this._from;
-                    };
-                    Query.prototype.hasFrom = function () {
-                        return !!this._from;
-                    };
-                    Query.prototype.field = function (field) {
-                        this._fields.push(field);
-                        return this;
-                    };
-                    Query.prototype.addManyFields = function (fields) {
-                        this._fields = this._fields.concat(fields);
-                        return this;
-                    };
-                    Query.prototype.getFields = function () {
-                        return this._fields;
-                    };
-                    Query.prototype.hasFields = function () {
-                        return (this._fields.length > 0);
-                    };
-                    Query.prototype.offset = function (offset) {
-                        this._offset = offset;
-                        return this;
-                    };
-                    Query.prototype.getOffset = function () {
-                        return this._offset;
-                    };
-                    Query.prototype.hasOffset = function () {
-                        return _.isNumber(this._offset);
-                    };
-                    Query.prototype.limit = function (limit) {
-                        this._limit = limit;
-                        return this;
-                    };
-                    Query.prototype.getLimit = function () {
-                        return this._limit;
-                    };
-                    Query.prototype.hasLimit = function () {
-                        return _.isNumber(this._limit);
-                    };
-                    Query.prototype.condition = function (condition) {
-                        this._conditions.push(condition);
-                        return this;
-                    };
-                    Query.prototype.addManyConditions = function (conditions) {
-                        this._conditions = this._conditions.concat(conditions);
-                        return this;
-                    };
-                    Query.prototype.getConditions = function () {
-                        return this._conditions;
-                    };
-                    Query.prototype.hasConditions = function () {
-                        return !!(this._conditions.length > 0);
-                    };
-                    Query.prototype.sorter = function (sorter) {
-                        this._sorters.push(sorter);
-                        return this;
-                    };
-                    Query.prototype.addManySorters = function (sorters) {
-                        this._sorters = this._sorters.concat(sorters);
-                        return this;
-                    };
-                    Query.prototype.getSorters = function () {
-                        return this._sorters;
-                    };
-                    Query.prototype.hasSorters = function () {
-                        return (this._sorters.length > 0);
-                    };
-                    Query.prototype.find = function (id) {
-                        this._find = id;
-                        return this;
-                    };
-                    Query.prototype.getFind = function () {
-                        return this._find;
-                    };
-                    Query.prototype.hasFind = function () {
-                        return !!this._find;
-                    };
-                    Query.prototype.merge = function (query) {
-                        if (query.hasFrom()) {
-                            this.from(query.getFrom());
-                        }
-                        if (query.hasFields()) {
-                            this.addManyFields(query.getFields());
-                        }
-                        if (query.hasOffset()) {
-                            this.offset(query.getOffset());
-                        }
-                        if (query.hasLimit()) {
-                            this.limit(query.getLimit());
-                        }
-                        if (query.hasConditions()) {
-                            this.addManyConditions(query.getConditions());
-                        }
-                        if (query.hasSorters()) {
-                            this.addManySorters(query.getSorters());
-                        }
-                        if (query.hasFind()) {
-                            this.find(query.getFind());
-                        }
-                        return this;
-                    };
-                    Query.from = function (from) {
-                        return (new this).from(from);
-                    };
-                    return Query;
-                })();
-                Query_1.Query = Query;
-            })(Query = Data.Query || (Data.Query = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Query;
-            (function (Query) {
-                (function (SortDirections) {
-                    SortDirections[SortDirections["ASCENDING"] = 0] = "ASCENDING";
-                    SortDirections[SortDirections["DESCENDING"] = 1] = "DESCENDING";
-                })(Query.SortDirections || (Query.SortDirections = {}));
-                var SortDirections = Query.SortDirections;
-                var Sorter = (function () {
-                    function Sorter(field, direction) {
-                        this._field = field;
-                        this._direction = direction;
-                    }
-                    Sorter.prototype.getField = function () {
-                        return this._field;
-                    };
-                    Sorter.prototype.getDirection = function () {
-                        return this._direction;
-                    };
-                    return Sorter;
-                })();
-                Query.Sorter = Sorter;
-            })(Query = Data.Query || (Data.Query = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
+///<reference path="Model/ActiveModel.ts"/>
+///<reference path="Query/Query.ts"/>
+///<reference path="IDataSource.ts"/>
+///<reference path="IDataSourceResponse.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -981,13 +1000,42 @@ var TSCore;
                 function Service($q) {
                     this.$q = $q;
                     this._sources = new List();
+                    this._resources = new TSCore.Data.Dictionary();
                 }
                 Service.prototype.source = function (source) {
                     this._sources.add(source);
+                    source.setDataService(this);
                     return this;
                 };
                 Service.prototype.getSources = function () {
                     return this._sources.clone();
+                };
+                Service.prototype.manyResources = function (resources) {
+                    var _this = this;
+                    resources.each(function (resourceName, resource) {
+                        _this._resources.set(resourceName, resource);
+                    });
+                    return this;
+                };
+                Service.prototype.resource = function (name, resource) {
+                    this[name] = resource;
+                    this._resources.set(name, resource);
+                    return this;
+                };
+                Service.prototype.getResources = function () {
+                    return this._resources.clone();
+                };
+                Service.prototype.getResource = function (name) {
+                    return this._resources.get(name);
+                };
+                Service.prototype.getResourceAsync = function (name) {
+                    var deferred = this.$q.defer();
+                    var resource = this._resources.get(name);
+                    if (!resource) {
+                        throw new TSCore.Exception.Exception('Resource `' + name + '` cannot be found');
+                    }
+                    deferred.resolve(resource);
+                    return deferred.promise;
                 };
                 Service.prototype.create = function (resourceName, data) {
                     var _this = this;
@@ -1068,22 +1116,22 @@ var TSCore;
                 Service.prototype._executeInSources = function (executor) {
                     var _this = this;
                     var sourceIndex = 0;
-                    var promise = this.$q.defer();
+                    var deferred = this.$q.defer();
                     var nextSource = function () {
                         if (sourceIndex >= _this._sources.count()) {
-                            promise.reject();
+                            deferred.reject();
                         }
                         var source = _this._sources.get(sourceIndex);
                         executor(source)
-                            .then(function (response) { return promise.resolve(response); })
+                            .then(function (response) { return deferred.resolve(response); })
                             .catch(function () { return nextSource(); });
                         sourceIndex++;
                     };
                     nextSource();
-                    return promise.promise;
+                    return deferred.promise;
                 };
-                Service.prototype._createModels = function (data) {
-                    // TODO: Create models from source results
+                Service.prototype._createModels = function (response) {
+                    //response.data.get(response.results, (resourceName) => {
                     return null;
                 };
                 Service.prototype._updateModel = function (model, data) {
@@ -1096,61 +1144,243 @@ var TSCore;
                         model.die();
                     }
                 };
-                Service.$inject = ['$q'];
                 return Service;
             })();
             Data.Service = Service;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
+///<reference path="Graph.ts"/>
 var TSCore;
 (function (TSCore) {
-    var Data;
-    (function (Data) {
-        var Transform;
-        (function (Transform) {
-            var Transformer = (function (_super) {
-                __extends(Transformer, _super);
-                function Transformer() {
-                    _super.apply(this, arguments);
-                    this.availableIncludes = [];
-                }
-                Transformer.prototype.transform = function (item) {
-                };
-                Transformer.prototype.collection = function (data) {
-                    var _this = this;
-                    if (!data) {
-                        return null;
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Graph;
+            (function (Graph) {
+                var Builder = (function () {
+                    function Builder() {
                     }
-                    return _.map(data, function (item) { return _this.item(item); });
-                };
-                Transformer.prototype.item = function (data) {
-                    var _this = this;
-                    if (!data) {
-                        return null;
-                    }
-                    var result = this.transform(data);
-                    _.each(this.availableIncludes, function (include) {
-                        var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
-                        if (result[include] && _this[includeMethod]) {
-                            result[include] = _this[includeMethod](result);
+                    Builder.prototype.resourceForKey = function (callback) {
+                        this._resourceForKeyCallback = callback;
+                    };
+                    Builder.prototype.build = function (data, rootResourceName) {
+                        var _this = this;
+                        if (rootResourceName === void 0) { rootResourceName = null; }
+                        var results = {};
+                        this._findResourcesRecursive(rootResourceName, data, function (resourceName, resource) {
+                            var record = _.clone(resource);
+                            var childResources = {};
+                            _this._findResources(record, function (fromArray, childResourceName, childResource) {
+                                var childResourceRef = new Graph.Reference(childResourceName, childResource);
+                                if (fromArray) {
+                                    childResources[childResourceName] = childResources[childResourceName] || [];
+                                    childResources[childResourceName].push(childResourceRef);
+                                }
+                                else {
+                                    childResources[childResourceName] = childResourceRef;
+                                }
+                            });
+                            _.each(childResources, function (childResource, childResourceName) {
+                                record[childResourceName] = childResource;
+                            });
+                            results[resourceName] = results[resourceName] || {};
+                            results[resourceName][record.id] = record;
+                        });
+                        return new Graph.Graph(results);
+                    };
+                    Builder.prototype._findResourcesRecursive = function (alias, data, callback) {
+                        var _this = this;
+                        if (!_.isObject(data)) {
+                            return;
                         }
-                    });
-                    return result;
-                };
-                Transformer.collection = function (data) {
-                    var transformer = new this;
-                    return transformer.collection(data);
-                };
-                Transformer.item = function (data) {
-                    var transformer = new this;
-                    return transformer.item(data);
-                };
-                return Transformer;
-            })(TSCore.BaseObject);
-            Transform.Transformer = Transformer;
-        })(Transform = Data.Transform || (Data.Transform = {}));
-    })(Data = TSCore.Data || (TSCore.Data = {}));
+                        if (alias) {
+                            alias = alias.toString();
+                            var resourceName = this._resourceForKeyCallback(alias);
+                            if (resourceName) {
+                                if (_.isArray(data)) {
+                                    _.each(data, function (resource) { return callback(resourceName, resource); });
+                                }
+                                else {
+                                    callback(resourceName, data);
+                                }
+                            }
+                        }
+                        _.each(data, function (value, key) { return _this._findResourcesRecursive(key, value, callback); });
+                    };
+                    Builder.prototype._findResources = function (data, callback) {
+                        var _this = this;
+                        if (!_.isObject(data)) {
+                            return;
+                        }
+                        _.each(data, function (value, key) {
+                            if (!_.isObject(value)) {
+                                return;
+                            }
+                            if (key) {
+                                var alias = key.toString();
+                                var resourceName = _this._resourceForKeyCallback(alias);
+                                if (resourceName) {
+                                    if (_.isArray(value)) {
+                                        _.each(value, function (resource) { return callback(true, resourceName, resource); });
+                                    }
+                                    else {
+                                        callback(false, resourceName, value);
+                                    }
+                                }
+                            }
+                        });
+                    };
+                    return Builder;
+                })();
+                Graph.Builder = Builder;
+            })(Graph = Data.Graph || (Data.Graph = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../IDataSource.ts"/>
+///<reference path="../Query/Query.ts"/>
+///<reference path="../Service.ts"/>
+///<reference path="../Graph/Builder.ts"/>
+///<reference path="../Graph/Reference.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var DataSources;
+            (function (DataSources) {
+                var Builder = TSCore.App.Data.Graph.Builder;
+                var Reference = TSCore.App.Data.Graph.Reference;
+                var ApiDataSource = (function () {
+                    function ApiDataSource($q, apiService) {
+                        this.$q = $q;
+                        this.apiService = apiService;
+                    }
+                    ApiDataSource.prototype.setDataService = function (service) {
+                        this._dataService = service;
+                    };
+                    ApiDataSource.prototype.getDataService = function () {
+                        return this._dataService;
+                    };
+                    ApiDataSource.prototype.execute = function (query) {
+                        var _this = this;
+                        var resourceName = query.getFrom();
+                        return this.apiService
+                            .execute(query)
+                            .then(function (response) { return _this._transformResponse(resourceName, response); });
+                    };
+                    ApiDataSource.prototype.create = function (resourceName, data) {
+                        var _this = this;
+                        return this.apiService
+                            .create(resourceName, data)
+                            .then(function (response) { return _this._transformResponse(resourceName, response); });
+                    };
+                    ApiDataSource.prototype.update = function (resourceName, resourceId, data) {
+                        var _this = this;
+                        return this.apiService
+                            .update(resourceName, resourceId, data)
+                            .then(function (response) { return _this._transformResponse(resourceName, response); });
+                    };
+                    ApiDataSource.prototype.remove = function (resourceName, resourceId) {
+                        var _this = this;
+                        return this.apiService
+                            .remove(resourceName, resourceId)
+                            .then(function (response) { return _this._transformResponse(resourceName, response); });
+                    };
+                    ApiDataSource.prototype.clear = function () {
+                        return this.$q.when();
+                    };
+                    ApiDataSource.prototype.importResponse = function (response) {
+                    };
+                    ApiDataSource.prototype._transformResponse = function (resourceName, response) {
+                        var _this = this;
+                        return this.getDataService()
+                            .getResourceAsync(resourceName)
+                            .then(function (resource) { return _this._createDataSourceResponse(resourceName, resource, response); });
+                    };
+                    ApiDataSource.prototype._createDataSourceResponse = function (resourceName, resource, response) {
+                        var _this = this;
+                        var builder = new Builder;
+                        builder.resourceForKey(function (key) { return _this._resourceForKey(key); });
+                        var graph = builder.build(response, resourceName);
+                        var results = graph.getItems(resourceName);
+                        results = _.map(results, function (resource, resourceId) {
+                            return new Reference(resourceName, resourceId);
+                        });
+                        return {
+                            data: graph,
+                            results: results
+                        };
+                    };
+                    ApiDataSource.prototype._resourceForKey = function (key) {
+                        var aliases = this._getResourcesAliasMap();
+                        return aliases.get(key);
+                    };
+                    ApiDataSource.prototype._getResourcesAliasMap = function () {
+                        var _this = this;
+                        if (this._resourceAliasMap) {
+                            return this._resourceAliasMap;
+                        }
+                        this._resourceAliasMap = new TSCore.Data.Dictionary();
+                        var resources = this.getDataService().getResources();
+                        resources.each(function (resourceName, resource) {
+                            _this._resourceAliasMap.set(resource.getSingleKey(), resourceName);
+                            _this._resourceAliasMap.set(resource.getMultipleKey(), resourceName);
+                        });
+                        return this._resourceAliasMap;
+                    };
+                    return ApiDataSource;
+                })();
+                DataSources.ApiDataSource = ApiDataSource;
+            })(DataSources = Data.DataSources || (Data.DataSources = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../IDataSource.ts"/>
+///<reference path="../Query/Query.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var DataSources;
+            (function (DataSources) {
+                var MemoryDataSource = (function () {
+                    function MemoryDataSource() {
+                    }
+                    MemoryDataSource.prototype.setDataService = function (service) {
+                        this._dataService = service;
+                    };
+                    MemoryDataSource.prototype.getDataService = function () {
+                        return this._dataService;
+                    };
+                    MemoryDataSource.prototype.execute = function (query) {
+                        return null;
+                    };
+                    MemoryDataSource.prototype.create = function (resourceName, data) {
+                        return null;
+                    };
+                    MemoryDataSource.prototype.update = function (resourceName, resourceId, data) {
+                        return null;
+                    };
+                    MemoryDataSource.prototype.remove = function (resourceName, resourceId) {
+                        return null;
+                    };
+                    MemoryDataSource.prototype.clear = function () {
+                        return null;
+                    };
+                    MemoryDataSource.prototype.importResponse = function (response) {
+                    };
+                    return MemoryDataSource;
+                })();
+                DataSources.MemoryDataSource = MemoryDataSource;
+            })(DataSources = Data.DataSources || (Data.DataSources = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
 /// <reference path="./RequestOptions.ts" />
 var TSCore;
@@ -1329,28 +1559,89 @@ var TSCore;
         })(Interceptors = App.Interceptors || (App.Interceptors = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
+/// <reference path="Api/RequestHandler.ts" />
+/// <reference path="Data/Transformer.ts" />
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Resource = (function () {
+            function Resource() {
+            }
+            Resource.prototype.prefix = function (prefix) {
+                this._prefix = prefix;
+                return this;
+            };
+            Resource.prototype.getPrefix = function () {
+                return this._prefix;
+            };
+            Resource.prototype.singleKey = function (singleKey) {
+                this._singleKey = singleKey;
+                return this;
+            };
+            Resource.prototype.getSingleKey = function () {
+                return this._singleKey;
+            };
+            Resource.prototype.multipleKey = function (multipleKey) {
+                this._multipleKey = multipleKey;
+                return this;
+            };
+            Resource.prototype.getMultipleKey = function () {
+                return this._multipleKey;
+            };
+            Resource.prototype.requestHandler = function (handler) {
+                this._requestHandler = handler;
+                return this;
+            };
+            Resource.prototype.getRequestHandler = function () {
+                return this._requestHandler;
+            };
+            Resource.prototype.model = function (model) {
+                this._model = model;
+                return this;
+            };
+            Resource.prototype.getModel = function () {
+                return this._model;
+            };
+            Resource.prototype.transformer = function (transformer) {
+                this._transformer = transformer;
+                return this;
+            };
+            Resource.prototype.getTransformer = function () {
+                return this._transformer;
+            };
+            return Resource;
+        })();
+        App.Resource = Resource;
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
 /// <reference path="../../ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="TSCore/App/Api/Resource.ts" />
+/// <reference path="TSCore/App/Api/IResource.ts" />
+/// <reference path="TSCore/App/Api/RequestHandler.ts" />
 /// <reference path="TSCore/App/Api/Service.ts" />
 /// <reference path="TSCore/App/App.ts" />
 /// <reference path="TSCore/App/Auth/AccountType.ts" />
 /// <reference path="TSCore/App/Auth/Manager.ts" />
 /// <reference path="TSCore/App/Auth/Session.ts" />
 /// <reference path="TSCore/App/Constants/HttpMethods.ts" />
+/// <reference path="TSCore/App/Data/DataSources/ApiDataSource.ts" />
+/// <reference path="TSCore/App/Data/DataSources/MemoryDataSource.ts" />
+/// <reference path="TSCore/App/Data/Graph/Builder.ts" />
+/// <reference path="TSCore/App/Data/Graph/Graph.ts" />
+/// <reference path="TSCore/App/Data/Graph/Reference.ts" />
 /// <reference path="TSCore/App/Data/IDataSource.ts" />
 /// <reference path="TSCore/App/Data/IDataSourceResponse.ts" />
-/// <reference path="TSCore/App/Data/JsonGraph.ts" />
+/// <reference path="TSCore/App/Data/IResource.ts" />
 /// <reference path="TSCore/App/Data/Model/ActiveModel.ts" />
-/// <reference path="TSCore/App/Data/Model/Model.ts" />
 /// <reference path="TSCore/App/Data/Query/Condition.ts" />
 /// <reference path="TSCore/App/Data/Query/Query.ts" />
 /// <reference path="TSCore/App/Data/Query/Sorter.ts" />
 /// <reference path="TSCore/App/Data/Service.ts" />
 /// <reference path="TSCore/App/Data/Transformer.ts" />
-/// <reference path="TSCore/App/Data/Transformers/JsonGraphTransformer.ts" />
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Interceptors/HttpInterceptor.ts" />
 /// <reference path="TSCore/App/Interceptors/StateInterceptor.ts" />
+/// <reference path="TSCore/App/Resource.ts" />
 //# sourceMappingURL=ts-core-app.js.map

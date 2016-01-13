@@ -1,4 +1,10 @@
-module TSCore.Data.Transform {
+module TSCore.App.Data {
+
+    export interface ITransformer {
+        new(): Transformer;
+        item(data);
+        collection(data);
+    }
 
     export class Transformer extends TSCore.BaseObject {
 

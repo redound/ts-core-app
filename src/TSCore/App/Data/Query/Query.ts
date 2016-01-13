@@ -1,9 +1,12 @@
+///<reference path="../IDataSource.ts"/>
+///<reference path="../Query/Condition.ts"/>
+///<reference path="../Query/Sorter.ts"/>
+
 module TSCore.App.Data.Query {
 
     import DataSource = TSCore.App.Data.IDataSource;
     import Condition = TSCore.App.Data.Query.Condition;
     import Sorter = TSCore.App.Data.Query.Sorter;
-    import Resource = TSCore.App.Api.Resource;
 
     export class Query {
 

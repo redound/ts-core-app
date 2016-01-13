@@ -1,65 +1,33 @@
-/// <reference path="../Http/RequestOptions.ts" />
+///<reference path="../Http/RequestOptions.ts"/>
+///<reference path="../Data/Query/Query.ts"/>
 
 module TSCore.App.Api {
 
-    import HttpMethods = TSCore.App.Constants.HttpMethods;
-    import Transformer = TSCore.Data.Transform.Transformer;
-    import Query = TSCore.App.Data.Query.Query;
-    import JsonGraph = TSCore.App.Data.JsonGraph;
     import RequestOptions = TSCore.App.Http.RequestOptions;
+    import Query = TSCore.App.Data.Query.Query;
 
-    export class Resource {
+    export class RequestHandler {
 
-        protected _prefix: string;
-        protected _singleKey: string;
-        protected _multipleKey: string;
-        protected _transformer: any;
+        public _resource: IResource;
 
-        public constructor(
-            protected httpService: TSCore.App.Http.Service
-        ) {
+        public constructor(protected httpService: TSCore.App.Http.Service) {
+
         }
 
-        public prefix(prefix: string) {
-            this._prefix = prefix;
-            return this;
+        public setResource(resource: IResource) {
+            this._resource = resource;
         }
 
-        public getPrefix(): string {
-            return this._prefix;
-        }
-
-        public singleKey(singleKey: string) {
-            this._singleKey = singleKey;
-            return this;
-        }
-
-        public getSingleKey(): string {
-            return this._singleKey;
-        }
-
-        public multipleKey(multipleKey: string) {
-            this._multipleKey = multipleKey;
-            return this;
-        }
-
-        public getMultipleKey(): string {
-            return this._multipleKey;
-        }
-
-        public transformer(transformer: any) {
-            this._transformer = transformer;
-            return this;
-        }
-
-        public getTransformer(): any {
-            return this._transformer;
+        public getResource(): IResource {
+            return this._resource;
         }
 
         public request(requestOptions: RequestOptions): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
+            var prefix = this.getResource().getPrefix();
             var relativeUrl = requestOptions.getUrl();
-            requestOptions.url(this.getPrefix() + relativeUrl);
+
+            requestOptions.url(prefix + relativeUrl);
 
             return this.httpService.request(requestOptions);
         }
@@ -79,7 +47,7 @@ module TSCore.App.Api {
             return this.request(
 
                 RequestOptions
-                     .get('/')
+                    .get('/')
 
             ).then(response => this._transformAll(response));
         }
@@ -158,12 +126,18 @@ module TSCore.App.Api {
 
         protected _transformMultiple(response: ng.IHttpPromiseCallbackArg<{}>): any {
 
-            return this._transformer.collection(response.data[this._multipleKey]);
+            var transformer = this.getResource().getTransformer();
+            var multipleKey = this.getResource().getMultipleKey();
+
+            return transformer.collection(response.data[multipleKey]);
         }
 
         protected _transformSingle(response: ng.IHttpPromiseCallbackArg<{}>): any {
 
-            return this._transformer.item(response.data[this._singleKey]);
+            var transformer = this.getResource().getTransformer();
+            var singleKey = this.getResource().getSingleKey();
+
+            return transformer.item(response.data[singleKey]);
         }
     }
 }

@@ -1,15 +1,22 @@
-module TSCore.App.Data.Transformers {
+///<reference path="Graph.ts"/>
 
-    export class JsonGraphTransformer {
+module TSCore.App.Data.Graph {
 
-        protected _aliases: TSCore.Data.Dictionary<string, string> = new TSCore.Data.Dictionary<string, string>();
+    export class Builder {
 
-        public resource(key: string, aliases: string[]): JsonGraphTransformer {
-            _.each(aliases, alias => this._aliases.set(alias, key));
-            return this;
+        protected _resourceForKeyCallback;
+
+        public resourceForKey(callback) {
+            this._resourceForKeyCallback = callback;
         }
 
-        public transform(rootResourceName: string, data: any): JsonGraph {
+        /**
+         * Build Graph from standard objects
+         * @param data
+         * @param rootResourceName Optional Resource name for objects that live in the root thus cannot be identified.
+         * @returns {TSCore.App.Data.Graph.Graph}
+         */
+        public build(data: any, rootResourceName = null): Graph {
 
             var results = {};
 
@@ -20,7 +27,7 @@ module TSCore.App.Data.Transformers {
 
                 this._findResources(record, (fromArray: boolean, childResourceName: string, childResource: any) => {
 
-                    var childResourceRef = this._createResourceRef(childResourceName, childResource);
+                    var childResourceRef = new Reference(childResourceName, childResource);
 
                     if (fromArray) {
                         childResources[childResourceName] = childResources[childResourceName] || [];
@@ -39,11 +46,7 @@ module TSCore.App.Data.Transformers {
                 results[resourceName][record.id] = record;
             });
 
-            results["results"] = _.map(results[rootResourceName], (resource) => {
-                return this._createResourceRef(rootResourceName, resource);
-            });
-
-            return new JsonGraph(results);
+            return new Graph(results);
         }
 
         protected _findResourcesRecursive(alias, data, callback) {
@@ -56,9 +59,9 @@ module TSCore.App.Data.Transformers {
 
                 alias = alias.toString();
 
-                if (this._aliases.contains(alias)) {
+                var resourceName = this._resourceForKeyCallback(alias);
 
-                    var resourceName = this._aliases.get(alias);
+                if (resourceName) {
 
                     if (_.isArray(data)) {
 
@@ -91,8 +94,9 @@ module TSCore.App.Data.Transformers {
 
                     var alias = key.toString();
 
-                    if (this._aliases.contains(alias)) {
-                        var resourceName = this._aliases.get(alias);
+                    var resourceName = this._resourceForKeyCallback(alias);
+
+                    if (resourceName) {
 
                         if (_.isArray(value)) {
 
@@ -106,14 +110,6 @@ module TSCore.App.Data.Transformers {
                     }
                 }
             });
-        }
-
-        protected _createResourceRef(resourceName: string, resource: any) {
-
-            return {
-                $type: "ref",
-                value: [resourceName, resource.id]
-            };
         }
     }
 }

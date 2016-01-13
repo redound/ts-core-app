@@ -1,29 +1,32 @@
+///<reference path="Model/ActiveModel.ts"/>
+///<reference path="Query/Query.ts"/>
+///<reference path="IDataSource.ts"/>
+///<reference path="IDataSourceResponse.ts"/>
+
 module TSCore.App.Data {
 
-    import List = TSCore.Data.List;
-    import Model = TSCore.App.Data.Model.Model;
-    import Query = TSCore.App.Data.Query.Query;
     import Dictionary = TSCore.Data.Dictionary;
+    import List = TSCore.Data.List;
+    import ModelList = TSCore.Data.ModelList;
+    import Query = TSCore.App.Data.Query.Query;
     import ActiveModel = TSCore.App.Data.Model.ActiveModel;
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
-    import ModelList = TSCore.Data.ModelList;
+    import Model = TSCore.Data.Model;
 
     export class Service {
 
         protected _sources: List<IDataSource> = new List<IDataSource>();
+        protected _resources: TSCore.Data.Dictionary<string, IResource> = new TSCore.Data.Dictionary<string, IResource>();
 
-        public static $inject = ['$q'];
-
-        public constructor(
-            protected $q: ng.IQService
-        ) {
+        public constructor(protected $q: ng.IQService) {
 
         }
 
         public source(source: IDataSource)
         {
             this._sources.add(source);
+            source.setDataService(this);
             return this;
         }
 
@@ -32,6 +35,42 @@ module TSCore.App.Data {
             return this._sources.clone();
         }
 
+        public manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service {
+
+            resources.each((resourceName, resource) => {
+                this._resources.set(resourceName, resource);
+            });
+
+            return this;
+        }
+
+        public resource(name: string, resource: IResource) {
+            this[name] = resource;
+            this._resources.set(name, resource);
+            return this;
+        }
+
+        public getResources(): TSCore.Data.Dictionary<string, IResource> {
+            return this._resources.clone();
+        }
+
+        public getResource(name: string): IResource {
+            return this._resources.get(name);
+        }
+
+        public getResourceAsync(name: string): ng.IPromise<Resource> {
+
+            var deferred = this.$q.defer();
+            var resource = this._resources.get(name);
+
+            if (!resource) {
+                throw new TSCore.Exception.Exception('Resource `' + name + '` cannot be found');
+            }
+
+            deferred.resolve(resource);
+
+            return deferred.promise;
+        }
 
         public create(resourceName: string, data: any): ng.IPromise<Model>
         {
@@ -145,17 +184,17 @@ module TSCore.App.Data {
         protected _executeInSources(executor: (source:IDataSource) => ng.IPromise<any>): ng.IPromise<any>
         {
             var sourceIndex = 0;
-            var promise: ng.IDeferred<any> = this.$q.defer();
+            var deferred: ng.IDeferred<any> = this.$q.defer();
 
             var nextSource = () => {
 
                 if(sourceIndex >= this._sources.count()){
-                    promise.reject();
+                    deferred.reject();
                 }
 
                 var source: IDataSource = this._sources.get(sourceIndex);
                 executor(source)
-                    .then(response => promise.resolve(response))
+                    .then(response => deferred.resolve(response))
                     .catch(() => nextSource());
 
                 sourceIndex++;
@@ -163,12 +202,17 @@ module TSCore.App.Data {
 
             nextSource();
 
-            return promise.promise;
+            return deferred.promise;
         }
 
-        protected _createModels(data: IDataSourceResponse): ModelList<Model>
+        protected _createModels(response: IDataSourceResponse): ModelList<Model>
         {
+            //response.data.get(response.results, (resourceName) => {
+
+            //});
+
             // TODO: Create models from source results
+
 
             /*
             var modelClass = this._resourceModels.get(resourceName);

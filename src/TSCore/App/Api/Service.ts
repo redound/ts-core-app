@@ -1,86 +1,100 @@
-/// <reference path="../Data/Transformers/JsonGraphTransformer.ts" />
+///<reference path="../Data/Query/Query.ts"/>
 
 module TSCore.App.Api {
 
     import Query = TSCore.App.Data.Query.Query;
-    import IDataSource = TSCore.App.Data.IDataSource;
-    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
-    import JsonGraphTransformer = TSCore.App.Data.Transformers.JsonGraphTransformer;
-    import Resource = TSCore.App.Api.Resource;
 
-    export class Service implements IDataSource {
+    export class Service {
 
-        protected _queryTransformer;
-        protected _resources: TSCore.Data.Dictionary<string, Resource> = new TSCore.Data.Dictionary<string, Resource>();
+        public constructor(protected $q) {
 
-        public queryTransformer(transformer: any) {
-            this._queryTransformer = transformer;
+        }
+
+        protected _resources: TSCore.Data.Dictionary<string, IResource> = new TSCore.Data.Dictionary<string, IResource>();
+
+        public manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service {
+
+            resources.each((resourceName, resource) => this.resource(resourceName, resource));
+
             return this;
         }
 
-        public getQueryTransformer(): any {
-            return this._queryTransformer;
-        }
-
-        public resource(name: string, resource: Resource) {
+        public resource(name: string, resource: IResource): Service {
             this[name] = resource;
             this._resources.set(name, resource);
+
+            this._registerRequestHandler(name, resource);
             return this;
         }
 
-        public execute(query: Query): ng.IPromise<IDataSourceResponse> {
-
-            var resource = this._resources.get(query.getFrom());
-
-            if (resource) {
-                return resource
-                    .query(query)
-                    .then(response => this._transformQuery(query, response));
-            }
+        protected _registerRequestHandler(name, resource) {
+            var requestHandler = resource.getRequestHandler();
+            requestHandler.setResource(resource);
+            this[name] = requestHandler;
         }
 
-        protected _transformQuery(query: Query, response: any): IDataSourceResponse {
+        public getResourceAsync(name: string): ng.IPromise<IResource> {
+
+            var deferred = this.$q.defer();
+            var resource = this._resources.get(name);
+
+            if (!resource) {
+                throw new TSCore.Exception.Exception('Resource `' + name + '` cannot be found');
+            }
+
+            deferred.resolve(resource);
+
+            return deferred.promise;
+        }
+
+        protected _getRequestHandler(resourceName: string): ng.IPromise<RequestHandler> {
+            return this.getResourceAsync(resourceName).then(resource => {
+                return resource.getRequestHandler();
+            });
+        }
+
+        public execute(query: Query): ng.IPromise<any> {
 
             var resourceName = query.getFrom();
 
-            var jsonGraphTransformer = new JsonGraphTransformer;
-
-            this._resources.each((key: string, value: Resource) => {
-                jsonGraphTransformer.resource(key, [value.getSingleKey(), value.getMultipleKey()]);
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.query(query);
             });
-
-            var graph = jsonGraphTransformer.transform(resourceName, response);
-
-            return graph.get(["results"]);
         }
 
-        public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>
-        {
-            // TODO
-            return null;
+        public all(resourceName: string): ng.IPromise<any> {
+
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.all();
+            });
         }
 
-        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>
-        {
-            // TODO
-            return null;
+        public find(resourceName: string, resourceId: number): ng.IPromise<any> {
+
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.find(resourceId);
+            });
         }
 
-        public remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>
+        public create(resourceName: string, data: any): ng.IPromise<any>
         {
-            // TODO
-            return null;
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.create(data);
+            });
         }
 
-        public clear(): ng.IPromise<any>
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>
         {
-            // TODO
-            return null;
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.update(resourceId, data);
+            });
         }
 
-        public importResponse(response: IDataSourceResponse)
+        public remove(resourceName: string, resourceId: any): ng.IPromise<any>
         {
-            // TODO
+            return this._getRequestHandler(resourceName).then(requestHandler => {
+                return requestHandler.remove(resourceId);
+            });
         }
     }
 }
