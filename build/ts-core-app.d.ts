@@ -345,6 +345,7 @@ declare module TSCore.App.Data {
         find(resourceName: string, resourceId: any): ng.IPromise<Model>;
         protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse>;
         protected _createModels(response: IDataSourceResponse): Model[];
+        protected _buildModels(response: IDataSourceResponse): Model[];
         execute(query: Query): ng.IPromise<any>;
         protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
         create(resourceName: string, data: any): ng.IPromise<any>;

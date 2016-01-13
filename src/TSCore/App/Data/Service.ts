@@ -112,7 +112,15 @@ module TSCore.App.Data {
             });
         }
 
+        // TODO: Distribute results
         protected _createModels(response: IDataSourceResponse): Model[] {
+
+            var models = this._buildModels(response);
+
+            return models;
+        }
+
+        protected _buildModels(response: IDataSourceResponse): Model[] {
 
             var data = response.data;
             var results = response.results;
@@ -135,7 +143,7 @@ module TSCore.App.Data {
 
                     if (model instanceof ActiveModel) {
 
-                        model.makeAlive
+                        model.makeAlive();
                         model.setSavedData(data);
                     }
                 }
@@ -188,56 +196,57 @@ module TSCore.App.Data {
             });
         }
 
-        // TODO: Walk through
         public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any> {
 
             if (data) {
                 model.assignAll(data);
             }
 
-            return this._executeCreate(resourceName, model.toObject(true)).then((result: any) => {
+            return this._executeCreate(resourceName, model.toObject(true)).then((results: any) => {
 
-                this._updateModel(model, result);
+                this._updateModel(model, results);
 
                 if(model instanceof ActiveModel) {
                     model.makeAlive(this, resourceName);
                 }
 
-                return model.getId();
+                return model;
             });
         }
 
-        // TODO: Create
         protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse> {
 
-            return null;
+            return this._executeInSources((source: IDataSource) => {
+                return source.create(resourceName, data);
+            });
         }
 
         /** Update **/
 
         public update(resourceName: string, resourceId: any, data: any): ng.IPromise<any> {
 
-            return this._executeUpdate(resourceName, resourceId, data).then(result => {
-                return this._createModels(result)[0] || null;
+            return this._executeUpdate(resourceName, resourceId, data).then(results => {
+                return this._createModels(results)[0] || null;
             });
         }
 
-        // TODO: Update
         protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
 
-            return null;
+            return this._executeInSources((source: IDataSource) => {
+                return source.update(resourceName, resourceId, data);
+            });
         }
 
-        // TODO: Walk through
         public updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void> {
 
-            return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(result => {
+            return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(results => {
 
-                this._updateModel(model, result);
+                this._updateModel(model, results);
                 return null;
             });
         }
 
+        // TODO: Distribute results
         protected _updateModel(model: Model, data: IDataSourceResponse) {
 
             // TODO: Resolve data
@@ -267,12 +276,14 @@ module TSCore.App.Data {
             });
         }
 
-        // TODO: Remove
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse> {
 
-            return null;
+            return this._executeInSources((source: IDataSource) => {
+                return source.remove(resourceName, resourceId);
+            });
         }
 
+        // TODO: Distribute results
         protected _removeModel(model) {
 
             if(model instanceof ActiveModel){

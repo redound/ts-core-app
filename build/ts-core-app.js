@@ -1062,6 +1062,10 @@ var TSCore;
                     });
                 };
                 Service.prototype._createModels = function (response) {
+                    var models = this._buildModels(response);
+                    return models;
+                };
+                Service.prototype._buildModels = function (response) {
                     var _this = this;
                     var data = response.data;
                     var results = response.results;
@@ -1075,7 +1079,7 @@ var TSCore;
                         if (model) {
                             models.push(model);
                             if (model instanceof ActiveModel) {
-                                model.makeAlive;
+                                model.makeAlive();
                                 model.setSavedData(data);
                             }
                         }
@@ -1117,30 +1121,34 @@ var TSCore;
                     if (data) {
                         model.assignAll(data);
                     }
-                    return this._executeCreate(resourceName, model.toObject(true)).then(function (result) {
-                        _this._updateModel(model, result);
+                    return this._executeCreate(resourceName, model.toObject(true)).then(function (results) {
+                        _this._updateModel(model, results);
                         if (model instanceof ActiveModel) {
                             model.makeAlive(_this, resourceName);
                         }
-                        return model.getId();
+                        return model;
                     });
                 };
                 Service.prototype._executeCreate = function (resourceName, data) {
-                    return null;
+                    return this._executeInSources(function (source) {
+                        return source.create(resourceName, data);
+                    });
                 };
                 Service.prototype.update = function (resourceName, resourceId, data) {
                     var _this = this;
-                    return this._executeUpdate(resourceName, resourceId, data).then(function (result) {
-                        return _this._createModels(result)[0] || null;
+                    return this._executeUpdate(resourceName, resourceId, data).then(function (results) {
+                        return _this._createModels(results)[0] || null;
                     });
                 };
                 Service.prototype._executeUpdate = function (resourceName, resourceId, data) {
-                    return null;
+                    return this._executeInSources(function (source) {
+                        return source.update(resourceName, resourceId, data);
+                    });
                 };
                 Service.prototype.updateModel = function (resourceName, model, data) {
                     var _this = this;
-                    return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(function (result) {
-                        _this._updateModel(model, result);
+                    return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(function (results) {
+                        _this._updateModel(model, results);
                         return null;
                     });
                 };
@@ -1158,7 +1166,9 @@ var TSCore;
                     });
                 };
                 Service.prototype._executeRemove = function (resourceName, resourceId) {
-                    return null;
+                    return this._executeInSources(function (source) {
+                        return source.remove(resourceName, resourceId);
+                    });
                 };
                 Service.prototype._removeModel = function (model) {
                     if (model instanceof ActiveModel) {
