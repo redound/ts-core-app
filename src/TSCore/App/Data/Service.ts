@@ -13,6 +13,7 @@ module TSCore.App.Data {
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
     import Model = TSCore.Data.Model;
+    import Exception = TSCore.Exception.Exception;
 
     export class Service {
 
@@ -160,10 +161,12 @@ module TSCore.App.Data {
             var nextSource = () => {
 
                 if(sourceIndex >= this._sources.count()){
-                    deferred.reject();
+                    deferred.reject('No dataSources left');
+                    return;
                 }
 
                 var source: IDataSource = this._sources.get(sourceIndex);
+
                 executor(source)
                     .then(response => deferred.resolve(response))
                     .catch(() => nextSource());

@@ -57,6 +57,10 @@ module TSCore.App.Api {
 
             var resourceName = query.getFrom();
 
+            if (query.hasFind()) {
+                return this.find(resourceName, query.getFind());
+            }
+
             return this._getRequestHandler(resourceName).then(requestHandler => {
                 return requestHandler.query(query);
             });

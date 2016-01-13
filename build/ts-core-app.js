@@ -679,6 +679,9 @@ var TSCore;
                 };
                 Service.prototype.execute = function (query) {
                     var resourceName = query.getFrom();
+                    if (query.hasFind()) {
+                        return this.find(resourceName, query.getFind());
+                    }
                     return this._getRequestHandler(resourceName).then(function (requestHandler) {
                         return requestHandler.query(query);
                     });
@@ -1091,7 +1094,8 @@ var TSCore;
                     var deferred = this.$q.defer();
                     var nextSource = function () {
                         if (sourceIndex >= _this._sources.count()) {
-                            deferred.reject();
+                            deferred.reject('No dataSources left');
+                            return;
                         }
                         var source = _this._sources.get(sourceIndex);
                         executor(source)
