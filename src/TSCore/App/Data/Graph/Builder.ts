@@ -27,7 +27,7 @@ module TSCore.App.Data.Graph {
 
                 this._findResources(record, (fromArray: boolean, childResourceName: string, childResource: any) => {
 
-                    var childResourceRef = new Reference(childResourceName, childResource);
+                    var childResourceRef = new Reference(childResourceName, childResource.id);
 
                     if (fromArray) {
                         childResources[childResourceName] = childResources[childResourceName] || [];

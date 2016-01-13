@@ -324,7 +324,6 @@ declare module TSCore.App.Data.Model {
 }
 declare module TSCore.App.Data {
     import List = TSCore.Data.List;
-    import ModelList = TSCore.Data.ModelList;
     import Query = TSCore.App.Data.Query.Query;
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
@@ -341,23 +340,23 @@ declare module TSCore.App.Data {
         getResources(): TSCore.Data.Dictionary<string, IResource>;
         getResource(name: string): IResource;
         getResourceAsync(name: string): ng.IPromise<Resource>;
-        create(resourceName: string, data: any): ng.IPromise<Model>;
+        query(resourceName: string): Query;
+        all(resourceName: string): ng.IPromise<any>;
+        find(resourceName: string, resourceId: any): ng.IPromise<Model>;
+        protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse>;
+        protected _createModels(response: IDataSourceResponse): Model[];
+        execute(query: Query): ng.IPromise<any>;
+        protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
+        create(resourceName: string, data: any): ng.IPromise<any>;
         createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any>;
-        update(resourceName: string, resourceId: any, data: any): ng.IPromise<Model>;
+        protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
+        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void>;
+        protected _updateModel(model: Model, data: IDataSourceResponse): void;
         remove(resourceName: string, resourceId: any): ng.IPromise<void>;
         removeModel(resourceName: string, model: Model): ng.IPromise<void>;
-        query(resourceName: string): Query;
-        all(resourceName: string): ng.IPromise<ModelList<Model>>;
-        find(resourceName: string, resourceId: any): ng.IPromise<Model>;
-        execute(query: Query): ng.IPromise<ModelList<Model>>;
-        protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse>;
-        protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
-        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
-        protected _createModels(response: IDataSourceResponse): ModelList<Model>;
-        protected _updateModel(model: Model, data: IDataSourceResponse): void;
         protected _removeModel(model: any): void;
     }
 }
@@ -418,7 +417,7 @@ declare module TSCore.App.Data.DataSources {
 }
 declare module TSCore.App.Data {
     interface IResource {
-        getModel(): TSCore.Data.Model;
+        getModel(): TSCore.Data.IModel;
         getSingleKey(): string;
         getMultipleKey(): string;
     }

@@ -90,8 +90,10 @@ module TSCore.App.Data.DataSources {
 
             var results = graph.getItems(resourceName);
 
+            var primaryKey = resource.getModel().primaryKey();
+
             results = _.map(results, (resource: any, resourceId: any) => {
-                return new Reference(resourceName, resourceId);
+                return new Reference(resourceName, resource[primaryKey]);
             });
 
             return {

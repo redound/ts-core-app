@@ -2,7 +2,7 @@ module TSCore.App.Data {
 
     export interface IResource {
 
-        getModel(): TSCore.Data.Model;
+        getModel(): TSCore.Data.IModel;
         getSingleKey(): string;
         getMultipleKey(): string;
     }

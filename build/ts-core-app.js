@@ -206,9 +206,12 @@ var TSCore;
                         this._data = {};
                     };
                     Graph.prototype.get = function (path, callback) {
-                        path = this._optimizePath(path);
                         if (!path) {
                             return this._resolveValueRecursive(null, null, this._data, callback);
+                        }
+                        path = this._optimizePath(path);
+                        if (!path) {
+                            return null;
                         }
                         var root = this._data;
                         var parentKey = null;
@@ -225,7 +228,6 @@ var TSCore;
                                 break;
                             }
                         }
-                        console.log('parentKey', parentKey, 'key', key);
                         return this._resolveValueRecursive(parentKey, key, root, callback);
                     };
                     Graph.prototype._optimizePath = function (path) {
@@ -1037,66 +1039,18 @@ var TSCore;
                     deferred.resolve(resource);
                     return deferred.promise;
                 };
-                Service.prototype.create = function (resourceName, data) {
-                    var _this = this;
-                    return this._executeCreate(resourceName, data).then(function (result) {
-                        return _this._createModels(result).first();
-                    });
-                };
-                Service.prototype.createModel = function (resourceName, model, data) {
-                    var _this = this;
-                    if (data) {
-                        model.assignAll(data);
-                    }
-                    return this._executeCreate(resourceName, model.toObject(true)).then(function (result) {
-                        _this._updateModel(model, result);
-                        if (model instanceof ActiveModel) {
-                            model.makeAlive(_this, resourceName);
-                        }
-                        return model.getId();
-                    });
-                };
-                Service.prototype.update = function (resourceName, resourceId, data) {
-                    var _this = this;
-                    return this._executeUpdate(resourceName, resourceId, data).then(function (result) {
-                        return _this._createModels(result).first();
-                    });
-                };
-                Service.prototype.updateModel = function (resourceName, model, data) {
-                    var _this = this;
-                    return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(function (result) {
-                        _this._updateModel(model, result);
-                        return null;
-                    });
-                };
-                Service.prototype.remove = function (resourceName, resourceId) {
-                    return this._executeRemove(resourceName, resourceId).then(function () { return null; });
-                };
-                Service.prototype.removeModel = function (resourceName, model) {
-                    var _this = this;
-                    return this._executeRemove(resourceName, model.getId()).then(function () {
-                        _this._removeModel(model);
-                        return null;
-                    });
-                };
                 Service.prototype.query = function (resourceName) {
                     return Query.from(resourceName);
                 };
                 Service.prototype.all = function (resourceName) {
-                    return this.execute(Query.from(resourceName));
+                    return this.execute(Query
+                        .from(resourceName));
                 };
                 Service.prototype.find = function (resourceName, resourceId) {
                     return this.execute(Query
                         .from(resourceName)
-                        .find(resourceId))
-                        .then(function (results) {
-                        return results.first();
-                    });
-                };
-                Service.prototype.execute = function (query) {
-                    var _this = this;
-                    return this._executeQuery(query).then(function (results) {
-                        return _this._createModels(results);
+                        .find(resourceId)).then(function (results) {
+                        return results[0] || null;
                     });
                 };
                 Service.prototype._executeQuery = function (query) {
@@ -1104,14 +1058,32 @@ var TSCore;
                         return source.execute(query);
                     });
                 };
-                Service.prototype._executeCreate = function (resourceName, data) {
-                    return null;
+                Service.prototype._createModels = function (response) {
+                    var _this = this;
+                    var data = response.data;
+                    var results = response.results;
+                    var models = [];
+                    _.each(results, function (result) {
+                        var model = data.get(result.value, function (resourceName, item) {
+                            var resource = _this.getResource(resourceName);
+                            var modelClass = resource.getModel();
+                            return new modelClass(item);
+                        });
+                        if (model) {
+                            models.push(model);
+                            if (model instanceof ActiveModel) {
+                                model.makeAlive;
+                                model.setSavedData(data);
+                            }
+                        }
+                    });
+                    return models;
                 };
-                Service.prototype._executeUpdate = function (resourceName, resourceId, data) {
-                    return null;
-                };
-                Service.prototype._executeRemove = function (resourceName, resourceId) {
-                    return null;
+                Service.prototype.execute = function (query) {
+                    var _this = this;
+                    return this._executeQuery(query).then(function (results) {
+                        return _this._createModels(results);
+                    });
                 };
                 Service.prototype._executeInSources = function (executor) {
                     var _this = this;
@@ -1130,12 +1102,59 @@ var TSCore;
                     nextSource();
                     return deferred.promise;
                 };
-                Service.prototype._createModels = function (response) {
-                    //response.data.get(response.results, (resourceName) => {
+                Service.prototype.create = function (resourceName, data) {
+                    var _this = this;
+                    return this._executeCreate(resourceName, data).then(function (result) {
+                        return _this._createModels(result)[0] || null;
+                    });
+                };
+                Service.prototype.createModel = function (resourceName, model, data) {
+                    var _this = this;
+                    if (data) {
+                        model.assignAll(data);
+                    }
+                    return this._executeCreate(resourceName, model.toObject(true)).then(function (result) {
+                        _this._updateModel(model, result);
+                        if (model instanceof ActiveModel) {
+                            model.makeAlive(_this, resourceName);
+                        }
+                        return model.getId();
+                    });
+                };
+                Service.prototype._executeCreate = function (resourceName, data) {
                     return null;
+                };
+                Service.prototype.update = function (resourceName, resourceId, data) {
+                    var _this = this;
+                    return this._executeUpdate(resourceName, resourceId, data).then(function (result) {
+                        return _this._createModels(result)[0] || null;
+                    });
+                };
+                Service.prototype._executeUpdate = function (resourceName, resourceId, data) {
+                    return null;
+                };
+                Service.prototype.updateModel = function (resourceName, model, data) {
+                    var _this = this;
+                    return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(function (result) {
+                        _this._updateModel(model, result);
+                        return null;
+                    });
                 };
                 Service.prototype._updateModel = function (model, data) {
                     // TODO: Resolve data
+                };
+                Service.prototype.remove = function (resourceName, resourceId) {
+                    return this._executeRemove(resourceName, resourceId).then(function () { return null; });
+                };
+                Service.prototype.removeModel = function (resourceName, model) {
+                    var _this = this;
+                    return this._executeRemove(resourceName, model.getId()).then(function () {
+                        _this._removeModel(model);
+                        return null;
+                    });
+                };
+                Service.prototype._executeRemove = function (resourceName, resourceId) {
+                    return null;
                 };
                 Service.prototype._removeModel = function (model) {
                     if (model instanceof ActiveModel) {
@@ -1173,7 +1192,7 @@ var TSCore;
                             var record = _.clone(resource);
                             var childResources = {};
                             _this._findResources(record, function (fromArray, childResourceName, childResource) {
-                                var childResourceRef = new Graph.Reference(childResourceName, childResource);
+                                var childResourceRef = new Graph.Reference(childResourceName, childResource.id);
                                 if (fromArray) {
                                     childResources[childResourceName] = childResources[childResourceName] || [];
                                     childResources[childResourceName].push(childResourceRef);
@@ -1307,8 +1326,9 @@ var TSCore;
                         builder.resourceForKey(function (key) { return _this._resourceForKey(key); });
                         var graph = builder.build(response, resourceName);
                         var results = graph.getItems(resourceName);
+                        var primaryKey = resource.getModel().primaryKey();
                         results = _.map(results, function (resource, resourceId) {
-                            return new Reference(resourceName, resourceId);
+                            return new Reference(resourceName, resource[primaryKey]);
                         });
                         return {
                             data: graph,

@@ -16,10 +16,14 @@ module TSCore.App.Data.Graph {
 
         public get(path?: any[], callback?: any) {
 
+            if (!path) {
+                return this._resolveValueRecursive(null, null, this._data, callback);
+            }
+
             path = this._optimizePath(path);
 
             if (!path) {
-                return this._resolveValueRecursive(null, null, this._data, callback);
+                return null;
             }
 
             var root = this._data;
@@ -39,7 +43,7 @@ module TSCore.App.Data.Graph {
                     break;
                 }
             }
-            console.log('parentKey', parentKey, 'key', key);
+
             return this._resolveValueRecursive(parentKey, key, root, callback);
         }
 
