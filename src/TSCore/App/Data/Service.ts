@@ -143,7 +143,7 @@ module TSCore.App.Data {
 
                     if (model instanceof ActiveModel) {
 
-                        model.makeAlive();
+                        model.activate();
                         model.setSavedData(data);
                     }
                 }
@@ -207,7 +207,7 @@ module TSCore.App.Data {
                 this._updateModel(model, results);
 
                 if(model instanceof ActiveModel) {
-                    model.makeAlive(this, resourceName);
+                    model.activate(this, resourceName);
                 }
 
                 return model;

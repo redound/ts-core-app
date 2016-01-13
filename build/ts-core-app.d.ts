@@ -298,7 +298,7 @@ declare module TSCore.App.Constants.HttpMethods {
 declare module TSCore.App.Data.Model {
     import Model = TSCore.Data.Model;
     enum ActiveModelFlag {
-        ALIVE = 0,
+        ACTIVATED = 0,
         CREATED = 1,
         REMOVED = 2,
     }
@@ -307,7 +307,7 @@ declare module TSCore.App.Data.Model {
         protected _dataService: TSCore.App.Data.Service;
         protected _resourceName: string;
         protected _savedData: any;
-        makeAlive(dataService: TSCore.App.Data.Service, resourceName: string): void;
+        activate(dataService: TSCore.App.Data.Service, resourceName: string): void;
         die(): void;
         setSavedData(data: any): void;
         markRemoved(): void;
@@ -315,7 +315,7 @@ declare module TSCore.App.Data.Model {
         create(dataService: TSCore.App.Data.Service, resourceName: string, data?: any): ng.IPromise<any>;
         remove(): ng.IPromise<void>;
         refresh(): ng.IPromise<boolean>;
-        isAlive(): boolean;
+        isActivated(): boolean;
         isCreated(): boolean;
         isRemoved(): boolean;
         isDirty(): boolean;

@@ -901,7 +901,7 @@ var TSCore;
                 var Exception = TSCore.Exception.Exception;
                 var Model = TSCore.Data.Model;
                 (function (ActiveModelFlag) {
-                    ActiveModelFlag[ActiveModelFlag["ALIVE"] = 0] = "ALIVE";
+                    ActiveModelFlag[ActiveModelFlag["ACTIVATED"] = 0] = "ACTIVATED";
                     ActiveModelFlag[ActiveModelFlag["CREATED"] = 1] = "CREATED";
                     ActiveModelFlag[ActiveModelFlag["REMOVED"] = 2] = "REMOVED";
                 })(Model_1.ActiveModelFlag || (Model_1.ActiveModelFlag = {}));
@@ -912,15 +912,15 @@ var TSCore;
                         _super.apply(this, arguments);
                         this._flags = new TSCore.Data.Collection();
                     }
-                    ActiveModel.prototype.makeAlive = function (dataService, resourceName) {
+                    ActiveModel.prototype.activate = function (dataService, resourceName) {
                         this._dataService = dataService;
                         this._resourceName = resourceName;
-                        this._flags.addMany([ActiveModelFlag.ALIVE, ActiveModelFlag.CREATED]);
+                        this._flags.addMany([ActiveModelFlag.ACTIVATED, ActiveModelFlag.CREATED]);
                     };
                     ActiveModel.prototype.die = function () {
                         this._dataService = null;
                         this._resourceName = null;
-                        this._flags.removeMany([ActiveModelFlag.ALIVE]);
+                        this._flags.removeMany([ActiveModelFlag.ACTIVATED]);
                     };
                     ActiveModel.prototype.setSavedData = function (data) {
                         this._savedData = data;
@@ -929,7 +929,7 @@ var TSCore;
                         this._flags.add(ActiveModelFlag.REMOVED);
                     };
                     ActiveModel.prototype.update = function (data) {
-                        if (!this.isAlive()) {
+                        if (!this.isActivated()) {
                             throw new Exception('Unable to update ' + this.getResourceIdentifier() + ', model is not alive');
                         }
                         return this._dataService.updateModel(this._resourceName, this, data);
@@ -938,14 +938,14 @@ var TSCore;
                         return dataService.createModel(resourceName, this, data);
                     };
                     ActiveModel.prototype.remove = function () {
-                        if (!this.isAlive()) {
+                        if (!this.isActivated()) {
                             throw new Exception('Unable to remove ' + this.getResourceIdentifier() + ', model is not alive');
                         }
                         return this._dataService.removeModel(this._resourceName, this);
                     };
                     ActiveModel.prototype.refresh = function () {
                         var _this = this;
-                        if (!this.isAlive()) {
+                        if (!this.isActivated()) {
                             throw new Exception('Unable to refresh ' + this.getResourceIdentifier() + ', model is not alive');
                         }
                         return this._dataService.find(this._resourceName, this.getId()).then(function (result) {
@@ -956,8 +956,8 @@ var TSCore;
                             return false;
                         });
                     };
-                    ActiveModel.prototype.isAlive = function () {
-                        return this._flags.contains(ActiveModelFlag.ALIVE);
+                    ActiveModel.prototype.isActivated = function () {
+                        return this._flags.contains(ActiveModelFlag.ACTIVATED);
                     };
                     ActiveModel.prototype.isCreated = function () {
                         return this._flags.contains(ActiveModelFlag.CREATED);
@@ -1079,7 +1079,7 @@ var TSCore;
                         if (model) {
                             models.push(model);
                             if (model instanceof ActiveModel) {
-                                model.makeAlive();
+                                model.activate();
                                 model.setSavedData(data);
                             }
                         }
@@ -1124,7 +1124,7 @@ var TSCore;
                     return this._executeCreate(resourceName, model.toObject(true)).then(function (results) {
                         _this._updateModel(model, results);
                         if (model instanceof ActiveModel) {
-                            model.makeAlive(_this, resourceName);
+                            model.activate(_this, resourceName);
                         }
                         return model;
                     });

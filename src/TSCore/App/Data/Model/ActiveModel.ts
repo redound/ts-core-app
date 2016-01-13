@@ -4,7 +4,7 @@ module TSCore.App.Data.Model {
     import Model = TSCore.Data.Model;
 
     export enum ActiveModelFlag {
-        ALIVE,
+        ACTIVATED,
         CREATED,
         REMOVED
     }
@@ -19,12 +19,12 @@ module TSCore.App.Data.Model {
         protected _savedData: any;
 
 
-        public makeAlive(dataService: TSCore.App.Data.Service, resourceName: string)
+        public activate(dataService: TSCore.App.Data.Service, resourceName: string)
         {
             this._dataService = dataService;
             this._resourceName = resourceName;
 
-            this._flags.addMany([ActiveModelFlag.ALIVE, ActiveModelFlag.CREATED]);
+            this._flags.addMany([ActiveModelFlag.ACTIVATED, ActiveModelFlag.CREATED]);
         }
 
         public die()
@@ -32,7 +32,7 @@ module TSCore.App.Data.Model {
             this._dataService = null;
             this._resourceName = null;
 
-            this._flags.removeMany([ActiveModelFlag.ALIVE]);
+            this._flags.removeMany([ActiveModelFlag.ACTIVATED]);
         }
 
         public setSavedData(data: any)
@@ -47,7 +47,7 @@ module TSCore.App.Data.Model {
 
         public update(data?: any): ng.IPromise<void>
         {
-            if(!this.isAlive()) {
+            if(!this.isActivated()) {
                 throw new Exception('Unable to update ' + this.getResourceIdentifier() + ', model is not alive');
             }
 
@@ -61,7 +61,7 @@ module TSCore.App.Data.Model {
 
         public remove(): ng.IPromise<void>
         {
-            if(!this.isAlive()) {
+            if(!this.isActivated()) {
                 throw new Exception('Unable to remove ' + this.getResourceIdentifier() + ', model is not alive');
             }
 
@@ -70,7 +70,7 @@ module TSCore.App.Data.Model {
 
         public refresh(): ng.IPromise<boolean>
         {
-            if(!this.isAlive()) {
+            if(!this.isActivated()) {
                 throw new Exception('Unable to refresh ' + this.getResourceIdentifier() + ', model is not alive');
             }
 
@@ -89,9 +89,9 @@ module TSCore.App.Data.Model {
         }
 
         // Flag helpers
-        public isAlive(): boolean
+        public isActivated(): boolean
         {
-            return this._flags.contains(ActiveModelFlag.ALIVE);
+            return this._flags.contains(ActiveModelFlag.ACTIVATED);
         }
 
         public isCreated(): boolean
