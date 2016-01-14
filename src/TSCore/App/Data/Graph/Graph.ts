@@ -6,7 +6,6 @@ module TSCore.App.Data.Graph {
         protected _data: any;
 
         public constructor(data?) {
-            this.clear();
             this._data = data || {};
         }
 
@@ -76,9 +75,15 @@ module TSCore.App.Data.Graph {
             return root ? path : null;
         }
 
-        public set(path: any[], value: any)
-        {
+        public set(path: any[], value: any) {
+
+            var originalPath = path;
+
             path = this._optimizePath(path);
+
+            if (!path) {
+                path = originalPath;
+            }
 
             if (path && path.length) {
 
@@ -87,6 +92,10 @@ module TSCore.App.Data.Graph {
                 for (var i = 0; i < path.length; i++) {
 
                     var part = path[i];
+
+                    if (root[part] === void 0 && i !== path.length - 1) {
+                        root[part] = {};
+                    }
 
                     if (i === path.length - 1) {
                         root[part] = value;
@@ -99,6 +108,29 @@ module TSCore.App.Data.Graph {
             }
 
             this._data = value;
+
+            return this;
+        }
+
+        public unset(path: any[]) {
+
+            path = this._optimizePath(path);
+
+            if (path && path.length) {
+
+                var root = this._data;
+
+                for (var i = 0; i < path.length; i++) {
+
+                    var part = path[i];
+
+                    if (i === path.length - 1) {
+                        delete root[part];
+                    }
+
+                    root = root[part];
+                }
+            }
 
             return this;
         }
@@ -119,6 +151,14 @@ module TSCore.App.Data.Graph {
             return this.get([resourceName]);
         }
 
+        public removeItems(resourceName: string) {
+            this.unset([resourceName]);
+        }
+
+        public removeItem(resourceName: string, resourceId: number) {
+            this.unset([resourceName, resourceId]);
+        }
+
         public merge(graph: Graph)
         {
             this.mergeData(graph.get());
@@ -126,7 +166,19 @@ module TSCore.App.Data.Graph {
 
         public mergeData(data: any){
 
-            // TODO: Implement
+            _.each(data, (resources: any, resourceName: string) => {
+
+                _.each(resources, (item, resourceId) => {
+
+                    var currentItem = this.getItem(resourceName, resourceId);
+                    if(!currentItem){
+                        this.setItem(resourceName, resourceId, item);
+                    }
+                    else {
+                        this.setItem(resourceName, resourceId, _.extend(currentItem, item));
+                    }
+                });
+            });
         }
 
         protected _isReference(value: any): boolean {

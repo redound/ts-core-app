@@ -68,10 +68,13 @@ declare module TSCore.App.Data.Graph {
         get(path?: any[], callback?: any): any;
         protected _optimizePath(path?: any[]): any[];
         set(path: any[], value: any): Graph;
+        unset(path: any[]): Graph;
         setItem(resourceName: string, resourceId: any, resource: any): void;
         getItem(resourceName: string, resourceId: any): any;
         setItems(resourceName: string, items: any): void;
         getItems(resourceName: string): any;
+        removeItems(resourceName: string): void;
+        removeItem(resourceName: string, resourceId: number): void;
         merge(graph: Graph): void;
         mergeData(data: any): void;
         protected _isReference(value: any): boolean;

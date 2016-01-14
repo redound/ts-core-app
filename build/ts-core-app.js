@@ -199,7 +199,6 @@ var TSCore;
             (function (Graph_1) {
                 var Graph = (function () {
                     function Graph(data) {
-                        this.clear();
                         this._data = data || {};
                     }
                     Graph.prototype.clear = function () {
@@ -251,11 +250,18 @@ var TSCore;
                         return root ? path : null;
                     };
                     Graph.prototype.set = function (path, value) {
+                        var originalPath = path;
                         path = this._optimizePath(path);
+                        if (!path) {
+                            path = originalPath;
+                        }
                         if (path && path.length) {
                             var root = this._data;
                             for (var i = 0; i < path.length; i++) {
                                 var part = path[i];
+                                if (root[part] === void 0 && i !== path.length - 1) {
+                                    root[part] = {};
+                                }
                                 if (i === path.length - 1) {
                                     root[part] = value;
                                 }
@@ -264,6 +270,20 @@ var TSCore;
                             return this;
                         }
                         this._data = value;
+                        return this;
+                    };
+                    Graph.prototype.unset = function (path) {
+                        path = this._optimizePath(path);
+                        if (path && path.length) {
+                            var root = this._data;
+                            for (var i = 0; i < path.length; i++) {
+                                var part = path[i];
+                                if (i === path.length - 1) {
+                                    delete root[part];
+                                }
+                                root = root[part];
+                            }
+                        }
                         return this;
                     };
                     Graph.prototype.setItem = function (resourceName, resourceId, resource) {
@@ -278,10 +298,28 @@ var TSCore;
                     Graph.prototype.getItems = function (resourceName) {
                         return this.get([resourceName]);
                     };
+                    Graph.prototype.removeItems = function (resourceName) {
+                        this.unset([resourceName]);
+                    };
+                    Graph.prototype.removeItem = function (resourceName, resourceId) {
+                        this.unset([resourceName, resourceId]);
+                    };
                     Graph.prototype.merge = function (graph) {
                         this.mergeData(graph.get());
                     };
                     Graph.prototype.mergeData = function (data) {
+                        var _this = this;
+                        _.each(data, function (resources, resourceName) {
+                            _.each(resources, function (item, resourceId) {
+                                var currentItem = _this.getItem(resourceName, resourceId);
+                                if (!currentItem) {
+                                    _this.setItem(resourceName, resourceId, item);
+                                }
+                                else {
+                                    _this.setItem(resourceName, resourceId, _.extend(currentItem, item));
+                                }
+                            });
+                        });
                     };
                     Graph.prototype._isReference = function (value) {
                         return (value && value.$type && value.$type == "ref");
