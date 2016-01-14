@@ -22,7 +22,7 @@ module TSCore.App.Data.DataSources {
             protected logger: TSCore.Logger.Logger,
             protected apiService: TSCore.App.Api.Service
         ) {
-            this.logger = this.logger.child('apiDataSource');
+            this.logger = this.logger.child('ApiDataSource');
         }
 
         public setDataService(service: DataService) {
@@ -37,6 +37,8 @@ module TSCore.App.Data.DataSources {
 
         public execute(query: Query): ng.IPromise<IDataSourceResponse> {
 
+            this.logger.info('execute');
+
             var resourceName = query.getFrom();
 
             return this.apiService
@@ -46,12 +48,16 @@ module TSCore.App.Data.DataSources {
 
         public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse> {
 
+            this.logger.info('create');
+
             return this.apiService
                 .create(resourceName, data)
                 .then(response => this._transformResponse(resourceName, response));
         }
 
         public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
+
+            this.logger.info('update');
 
             return this.apiService
                 .update(resourceName, resourceId, data)
@@ -60,14 +66,16 @@ module TSCore.App.Data.DataSources {
 
         public remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse> {
 
+            this.logger.info('remove');
+
             return this.apiService
                 .remove(resourceName, resourceId)
                 .then(response => this._transformResponse(resourceName, response));
         }
 
-        public notifyExecute(response: IDataSourceResponse): ng.IPromise<void> {
+        public notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void> {
 
-            this.logger.info('notifyExecute - response', response);
+            this.logger.info('notifyExecute - query ', query, ' - response', response);
 
             return this.$q.when();
         }

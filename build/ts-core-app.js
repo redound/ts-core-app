@@ -572,6 +572,19 @@ var TSCore;
                         }
                         return this;
                     };
+                    Query.prototype.serialize = function (opts) {
+                        var obj = {};
+                        if (_.contains(opts, "from")) {
+                            obj.from = this._from;
+                        }
+                        if (_.contains(opts, "conditions")) {
+                            obj.conditions = this.getConditions();
+                        }
+                        if (_.contains(opts, "sorters")) {
+                            obj.sorters = this.getSorters();
+                        }
+                        return JSON.stringify(obj);
+                    };
                     Query.from = function (from) {
                         return (new this).from(from);
                     };
@@ -1103,8 +1116,11 @@ var TSCore;
                         .then(function (result) {
                         response = result.response;
                         var sourceIndex = _this._sources.indexOf(result.source);
-                        return _this._notifySources(sourceIndex, function (source) {
-                            return source.notifyExecute(response);
+                        if (sourceIndex === 0) {
+                            return _this.$q.when();
+                        }
+                        return _this._notifySources(sourceIndex - 1, function (source) {
+                            return source.notifyExecute(query, response);
                         });
                     })
                         .then(function () {
@@ -1166,7 +1182,10 @@ var TSCore;
                         .then(function (result) {
                         response = result.response;
                         var sourceIndex = _this._sources.indexOf(result.source);
-                        return _this._notifySources(sourceIndex, function (source) {
+                        if (sourceIndex === 0) {
+                            return _this.$q.when();
+                        }
+                        return _this._notifySources(sourceIndex - 1, function (source) {
                             return source.notifyCreate(response);
                         });
                     })
@@ -1196,7 +1215,10 @@ var TSCore;
                         .then(function (result) {
                         response = result.response;
                         var sourceIndex = _this._sources.indexOf(result.source);
-                        return _this._notifySources(sourceIndex, function (source) {
+                        if (sourceIndex === 0) {
+                            return _this.$q.when();
+                        }
+                        return _this._notifySources(sourceIndex - 1, function (source) {
                             return source.notifyUpdate(response);
                         });
                     })
@@ -1223,7 +1245,10 @@ var TSCore;
                         .then(function (result) {
                         response = result.response;
                         var sourceIndex = _this._sources.indexOf(result.source);
-                        return _this._notifySources(sourceIndex, function (source) {
+                        if (sourceIndex === 0) {
+                            return _this.$q.when();
+                        }
+                        return _this._notifySources(sourceIndex - 1, function (source) {
                             return source.notifyRemove(response);
                         });
                     })
@@ -1234,7 +1259,7 @@ var TSCore;
                 Service.prototype._notifySources = function (startIndex, executor) {
                     var promises = [];
                     for (var sourceIndex = startIndex; sourceIndex >= 0; sourceIndex--) {
-                        var source = this._sources.get(startIndex);
+                        var source = this._sources.get(sourceIndex);
                         promises.push(executor(source));
                     }
                     return this.$q.all(promises);
@@ -1399,7 +1424,7 @@ var TSCore;
                         this.$q = $q;
                         this.logger = logger;
                         this.apiService = apiService;
-                        this.logger = this.logger.child('apiDataSource');
+                        this.logger = this.logger.child('ApiDataSource');
                     }
                     ApiDataSource.prototype.setDataService = function (service) {
                         this._dataService = service;
@@ -1409,6 +1434,7 @@ var TSCore;
                     };
                     ApiDataSource.prototype.execute = function (query) {
                         var _this = this;
+                        this.logger.info('execute');
                         var resourceName = query.getFrom();
                         return this.apiService
                             .execute(query)
@@ -1416,24 +1442,27 @@ var TSCore;
                     };
                     ApiDataSource.prototype.create = function (resourceName, data) {
                         var _this = this;
+                        this.logger.info('create');
                         return this.apiService
                             .create(resourceName, data)
                             .then(function (response) { return _this._transformResponse(resourceName, response); });
                     };
                     ApiDataSource.prototype.update = function (resourceName, resourceId, data) {
                         var _this = this;
+                        this.logger.info('update');
                         return this.apiService
                             .update(resourceName, resourceId, data)
                             .then(function (response) { return _this._transformResponse(resourceName, response); });
                     };
                     ApiDataSource.prototype.remove = function (resourceName, resourceId) {
                         var _this = this;
+                        this.logger.info('remove');
                         return this.apiService
                             .remove(resourceName, resourceId)
                             .then(function (response) { return _this._transformResponse(resourceName, response); });
                     };
-                    ApiDataSource.prototype.notifyExecute = function (response) {
-                        this.logger.info('notifyExecute - response', response);
+                    ApiDataSource.prototype.notifyExecute = function (query, response) {
+                        this.logger.info('notifyExecute - query ', query, ' - response', response);
                         return this.$q.when();
                     };
                     ApiDataSource.prototype.notifyCreate = function (response) {
@@ -1502,6 +1531,7 @@ var TSCore;
 })(TSCore || (TSCore = {}));
 ///<reference path="../IDataSource.ts"/>
 ///<reference path="../Query/Query.ts"/>
+///<reference path="../Graph/Graph.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1510,9 +1540,14 @@ var TSCore;
         (function (Data) {
             var DataSources;
             (function (DataSources) {
+                var Graph = TSCore.App.Data.Graph.Graph;
                 var MemoryDataSource = (function () {
-                    function MemoryDataSource($q) {
+                    function MemoryDataSource($q, logger) {
                         this.$q = $q;
+                        this.logger = logger;
+                        this._graph = new Graph;
+                        this._queryResultMap = new TSCore.Data.Dictionary();
+                        this.logger = this.logger.child('MemoryDataSource');
                     }
                     MemoryDataSource.prototype.setDataService = function (service) {
                         this._dataService = service;
@@ -1521,32 +1556,56 @@ var TSCore;
                         return this._dataService;
                     };
                     MemoryDataSource.prototype.execute = function (query) {
-                        return null;
+                        this.logger.info('execute');
+                        var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
+                        var queryResult = this._queryResultMap.get(serializedQuery);
+                        if (queryResult) {
+                            this.logger.info('resolve cached results');
+                            return this.$q.when({
+                                data: this._graph,
+                                results: _.clone(queryResult.references)
+                            });
+                        }
+                        return this.$q.reject();
                     };
                     MemoryDataSource.prototype.create = function (resourceName, data) {
-                        return null;
+                        this.logger.info('create');
+                        return this.$q.reject();
                     };
                     MemoryDataSource.prototype.update = function (resourceName, resourceId, data) {
-                        return null;
+                        this.logger.info('update');
+                        return this.$q.reject();
                     };
                     MemoryDataSource.prototype.remove = function (resourceName, resourceId) {
-                        return null;
+                        this.logger.info('remove');
+                        return this.$q.reject();
                     };
-                    MemoryDataSource.prototype.notifyExecute = function (response) {
+                    MemoryDataSource.prototype.notifyExecute = function (query, response) {
+                        this.logger.info('notifyExecute - query ', query, ' - response', response);
+                        var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
+                        this._graph.merge(response.data);
+                        this._queryResultMap.set(serializedQuery, {
+                            query: _.clone(query),
+                            references: _.clone(response.results)
+                        });
                         return this.$q.when();
                     };
                     MemoryDataSource.prototype.notifyCreate = function (response) {
+                        this.logger.info('notifyCreate - response', response);
                         return this.$q.when();
                     };
                     MemoryDataSource.prototype.notifyUpdate = function (response) {
+                        this.logger.info('notifyUpdate - response', response);
                         return this.$q.when();
                     };
                     MemoryDataSource.prototype.notifyRemove = function (response) {
+                        this.logger.info('notifyRemove - response', response);
                         return this.$q.when();
                     };
                     MemoryDataSource.prototype.clear = function () {
                         return null;
                     };
+                    MemoryDataSource.QUERY_SERIALIZE_FIELDS = ["from", "conditions", "sorters"];
                     return MemoryDataSource;
                 })();
                 DataSources.MemoryDataSource = MemoryDataSource;

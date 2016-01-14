@@ -180,6 +180,25 @@ module TSCore.App.Data.Query {
             return this;
         }
 
+        public serialize(opts: string []) {
+
+            var obj: any = {};
+
+            if (_.contains(opts, "from")) {
+                obj.from = this._from;
+            }
+
+            if (_.contains(opts, "conditions")) {
+                obj.conditions = this.getConditions();
+            }
+
+            if (_.contains(opts, "sorters")) {
+                obj.sorters = this.getSorters();
+            }
+
+            return JSON.stringify(obj);
+        }
+
         public static from(from) {
 
             return (new this).from(from);

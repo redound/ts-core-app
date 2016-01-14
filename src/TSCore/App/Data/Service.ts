@@ -124,8 +124,12 @@ module TSCore.App.Data {
 
                 var sourceIndex = this._sources.indexOf(result.source);
 
-                return this._notifySources(sourceIndex, source => {
-                    return source.notifyExecute(response);
+                if (sourceIndex === 0) {
+                    return this.$q.when();
+                }
+
+                return this._notifySources(sourceIndex - 1, source => {
+                    return source.notifyExecute(query, response);
                 });
             })
             .then(() => {
@@ -212,7 +216,11 @@ module TSCore.App.Data {
 
                     var sourceIndex = this._sources.indexOf(result.source);
 
-                    return this._notifySources(sourceIndex, source => {
+                    if (sourceIndex === 0) {
+                        return this.$q.when();
+                    }
+
+                    return this._notifySources(sourceIndex - 1, source => {
                         return source.notifyCreate(response);
                     });
                 })
@@ -253,7 +261,11 @@ module TSCore.App.Data {
 
                     var sourceIndex = this._sources.indexOf(result.source);
 
-                    return this._notifySources(sourceIndex, source => {
+                    if (sourceIndex === 0) {
+                        return this.$q.when();
+                    }
+
+                    return this._notifySources(sourceIndex - 1, source => {
                         return source.notifyUpdate(response);
                     });
                 })
@@ -292,7 +304,11 @@ module TSCore.App.Data {
 
                     var sourceIndex = this._sources.indexOf(result.source);
 
-                    return this._notifySources(sourceIndex, source => {
+                    if (sourceIndex === 0) {
+                        return this.$q.when();
+                    }
+
+                    return this._notifySources(sourceIndex - 1, source => {
                         return source.notifyRemove(response);
                     });
                 })
@@ -309,7 +325,7 @@ module TSCore.App.Data {
 
             for (var sourceIndex = startIndex; sourceIndex >= 0; sourceIndex--) {
 
-                var source = this._sources.get(startIndex);
+                var source = this._sources.get(sourceIndex);
                 promises.push(executor(source));
             }
 

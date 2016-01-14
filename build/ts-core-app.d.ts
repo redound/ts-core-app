@@ -100,7 +100,7 @@ declare module TSCore.App.Data {
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void>;
         notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
@@ -183,6 +183,7 @@ declare module TSCore.App.Data.Query {
         getFind(): any;
         hasFind(): boolean;
         merge(query: Query): Query;
+        serialize(opts: string[]): string;
         static from(from: any): Query;
     }
 }
@@ -398,7 +399,7 @@ declare module TSCore.App.Data.DataSources {
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void>;
         notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
@@ -420,17 +421,27 @@ declare module TSCore.App.Data.DataSources {
     import IDataSource = TSCore.App.Data.IDataSource;
     import Query = TSCore.App.Data.Query.Query;
     import DataService = TSCore.App.Data.Service;
+    import Graph = TSCore.App.Data.Graph.Graph;
+    import Reference = TSCore.App.Data.Graph.Reference;
+    interface IQueryResult {
+        query: Query;
+        references: Reference[];
+    }
     class MemoryDataSource implements IDataSource {
         protected $q: ng.IQService;
+        protected logger: TSCore.Logger.Logger;
+        static QUERY_SERIALIZE_FIELDS: string[];
         protected _dataService: DataService;
-        constructor($q: ng.IQService);
+        protected _graph: Graph;
+        protected _queryResultMap: TSCore.Data.Dictionary<string, IQueryResult>;
+        constructor($q: ng.IQService, logger: TSCore.Logger.Logger);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void>;
         notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
