@@ -12,6 +12,12 @@ module TSCore.App.Data.DataSources {
 
         protected _dataService: DataService;
 
+        public constructor(
+            protected $q: ng.IQService
+        ) {
+
+        }
+
         public setDataService(service: DataService) {
             this._dataService = service;
         }
@@ -44,15 +50,31 @@ module TSCore.App.Data.DataSources {
             return null;
         }
 
+
+        public notifyExecute(response: IDataSourceResponse): ng.IPromise<void> {
+
+            return this.$q.when();
+        }
+
+        public notifyCreate(response: IDataSourceResponse): ng.IPromise<void> {
+
+            return this.$q.when();
+        }
+
+        public notifyUpdate(response: IDataSourceResponse): ng.IPromise<void> {
+
+            return this.$q.when();
+        }
+
+        public notifyRemove(response: IDataSourceResponse): ng.IPromise<void> {
+
+            return this.$q.when();
+        }
+
         public clear(): ng.IPromise<any>
         {
             // TODO
             return null;
-        }
-
-        public importResponse(response: IDataSourceResponse)
-        {
-            // TODO
         }
     }
 }

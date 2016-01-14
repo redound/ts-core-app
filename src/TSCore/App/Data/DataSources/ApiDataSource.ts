@@ -19,21 +19,24 @@ module TSCore.App.Data.DataSources {
 
         public constructor(
             protected $q: ng.IQService,
+            protected logger: TSCore.Logger.Logger,
             protected apiService: TSCore.App.Api.Service
         ) {
-
+            this.logger = this.logger.child('apiDataSource');
         }
 
         public setDataService(service: DataService) {
+
             this._dataService = service;
         }
 
         public getDataService(): DataService {
+
             return this._dataService;
         }
 
-        public execute(query: Query): ng.IPromise<IDataSourceResponse>
-        {
+        public execute(query: Query): ng.IPromise<IDataSourceResponse> {
+
             var resourceName = query.getFrom();
 
             return this.apiService
@@ -41,36 +44,59 @@ module TSCore.App.Data.DataSources {
                 .then(response => this._transformResponse(resourceName, response));
         }
 
-        public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>
-        {
+        public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse> {
+
             return this.apiService
                 .create(resourceName, data)
                 .then(response => this._transformResponse(resourceName, response));
         }
 
-        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>
-        {
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
+
             return this.apiService
                 .update(resourceName, resourceId, data)
                 .then(response => this._transformResponse(resourceName, response));
         }
 
-        public remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>
-        {
+        public remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse> {
+
             return this.apiService
                 .remove(resourceName, resourceId)
                 .then(response => this._transformResponse(resourceName, response));
+        }
+
+        public notifyExecute(response: IDataSourceResponse): ng.IPromise<void> {
+
+            this.logger.info('notifyExecute - response', response);
+
+            return this.$q.when();
+        }
+
+        public notifyCreate(response: IDataSourceResponse): ng.IPromise<void> {
+
+            this.logger.info('notifyCreate - response', response);
+
+            return this.$q.when();
+        }
+
+        public notifyUpdate(response: IDataSourceResponse): ng.IPromise<void> {
+
+            this.logger.info('notifyUpdate - response', response);
+
+            return this.$q.when();
+        }
+
+        public notifyRemove(response: IDataSourceResponse): ng.IPromise<void> {
+
+            this.logger.info('notifyRemove - response', response);
+
+            return this.$q.when();
         }
 
         public clear(): ng.IPromise<any>
         {
             // Do nothing
             return this.$q.when();
-        }
-
-        public importResponse(response: IDataSourceResponse)
-        {
-            // Do nothing
         }
 
         protected _transformResponse(resourceName: string, response: any) {

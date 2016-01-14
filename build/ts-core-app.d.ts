@@ -97,8 +97,11 @@ declare module TSCore.App.Data {
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
         clear(): ng.IPromise<any>;
-        importResponse(response: IDataSourceResponse): any;
     }
 }
 declare module TSCore.App.Data.Query {
@@ -308,7 +311,7 @@ declare module TSCore.App.Data.Model {
         protected _resourceName: string;
         protected _savedData: any;
         activate(dataService: TSCore.App.Data.Service, resourceName: string): void;
-        die(): void;
+        deactivate(): void;
         setSavedData(data: any): void;
         markRemoved(): void;
         update(data?: any): ng.IPromise<void>;
@@ -328,6 +331,10 @@ declare module TSCore.App.Data {
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
     import Model = TSCore.Data.Model;
+    interface IDataSourceExecutionResult {
+        response: IDataSourceResponse;
+        source: IDataSource;
+    }
     class Service {
         protected $q: ng.IQService;
         protected _sources: List<IDataSource>;
@@ -343,22 +350,21 @@ declare module TSCore.App.Data {
         query(resourceName: string): Query;
         all(resourceName: string): ng.IPromise<any>;
         find(resourceName: string, resourceId: any): ng.IPromise<Model>;
-        protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse>;
-        protected _createModels(response: IDataSourceResponse): Model[];
-        protected _buildModels(response: IDataSourceResponse): Model[];
         execute(query: Query): ng.IPromise<any>;
-        protected _executeInSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
+        protected _createModels(response: IDataSourceResponse): Model[];
         create(resourceName: string, data: any): ng.IPromise<any>;
         createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any>;
         protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
-        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void>;
-        protected _updateModel(model: Model, data: IDataSourceResponse): void;
+        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<void>;
         removeModel(resourceName: string, model: Model): ng.IPromise<void>;
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
-        protected _removeModel(model: any): void;
+        protected _notifySources(startIndex: number, executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
+        protected _executeSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<IDataSourceExecutionResult>;
+        protected static _updateModel(model: any, data: any): Model;
+        protected static _removeModel(model: any): Model;
     }
 }
 declare module TSCore.App.Data.Graph {
@@ -378,18 +384,22 @@ declare module TSCore.App.Data.DataSources {
     import DataService = TSCore.App.Data.Service;
     class ApiDataSource implements IDataSource {
         protected $q: ng.IQService;
+        protected logger: TSCore.Logger.Logger;
         protected apiService: TSCore.App.Api.Service;
         protected _dataService: DataService;
         protected _resourceAliasMap: TSCore.Data.Dictionary<string, string>;
-        constructor($q: ng.IQService, apiService: TSCore.App.Api.Service);
+        constructor($q: ng.IQService, logger: TSCore.Logger.Logger, apiService: TSCore.App.Api.Service);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
         clear(): ng.IPromise<any>;
-        importResponse(response: IDataSourceResponse): void;
         protected _transformResponse(resourceName: string, response: any): ng.IPromise<{
             data: Graph.Graph;
             results: any;
@@ -408,15 +418,20 @@ declare module TSCore.App.Data.DataSources {
     import Query = TSCore.App.Data.Query.Query;
     import DataService = TSCore.App.Data.Service;
     class MemoryDataSource implements IDataSource {
+        protected $q: ng.IQService;
         protected _dataService: DataService;
+        constructor($q: ng.IQService);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
+        notifyExecute(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
+        notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
         clear(): ng.IPromise<any>;
-        importResponse(response: IDataSourceResponse): void;
     }
 }
 declare module TSCore.App.Data {

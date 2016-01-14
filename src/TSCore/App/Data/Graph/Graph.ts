@@ -136,7 +136,7 @@ module TSCore.App.Data.Graph {
         protected _resolveValueRecursive(parentKey, key, value, callback?: any) {
 
             if (this._isReference(value)) {
-                value = this.get(value.value, callback);
+                return this.get(value.value, callback);
             }
 
             if (_.isArray(value)) {

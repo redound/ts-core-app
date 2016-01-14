@@ -15,6 +15,11 @@ module TSCore.App.Data {
     import Model = TSCore.Data.Model;
     import Exception = TSCore.Exception.Exception;
 
+    export interface IDataSourceExecutionResult {
+        response: IDataSourceResponse,
+        source: IDataSource
+    }
+
     export class Service {
 
         protected _sources: List<IDataSource> = new List<IDataSource>();
@@ -78,6 +83,7 @@ module TSCore.App.Data {
         /** Query **/
 
         public query(resourceName: string): Query {
+
             return Query.from(resourceName);
         }
 
@@ -105,22 +111,29 @@ module TSCore.App.Data {
             });
         }
 
-        protected _executeQuery(query: Query): ng.IPromise<IDataSourceResponse> {
+        public execute(query: Query): ng.IPromise<any> {
 
-            return this._executeInSources((source: IDataSource) => {
+            var response;
+
+            return this._executeSources((source: IDataSource) => {
                 return source.execute(query);
+            })
+            .then(result => {
+
+                response = result.response;
+
+                var sourceIndex = this._sources.indexOf(result.source);
+
+                return this._notifySources(sourceIndex, source => {
+                    return source.notifyExecute(response);
+                });
+            })
+            .then(() => {
+                return this._createModels(response);
             });
         }
 
-        // TODO: Distribute results
         protected _createModels(response: IDataSourceResponse): Model[] {
-
-            var models = this._buildModels(response);
-
-            return models;
-        }
-
-        protected _buildModels(response: IDataSourceResponse): Model[] {
 
             var data = response.data;
             var results = response.results;
@@ -129,39 +142,181 @@ module TSCore.App.Data {
 
             _.each(results, (result) => {
 
-                var model = data.get(result.value, (resourceName: string, item: any) => {
+                var resolveModel = data.get(result.value, (resourceName: string, item: any) => {
 
                     var resource = this.getResource(resourceName);
                     var modelClass = resource.getModel();
 
-                    return new modelClass(item);
-                });
-
-                if (model) {
-
-                    models.push(model);
+                    var model = new modelClass(item);
 
                     if (model instanceof ActiveModel) {
 
-                        model.activate();
+                        model.activate(this, resourceName);
                         model.setSavedData(data);
                     }
+
+                    return model;
+                });
+
+                if (resolveModel) {
+
+                    models.push(resolveModel);
                 }
             });
 
             return models;
         }
 
-        /** Execute **/
+        /** Create **/
 
-        public execute(query: Query): ng.IPromise<any> {
+        public create(resourceName: string, data: any): ng.IPromise<any> {
 
-            return this._executeQuery(query).then(results => {
-                return this._createModels(results);
+            return this
+                ._executeCreate(resourceName, data)
+                .then(response => {
+                    return this._createModels(response)[0] || null;
+                });
+        }
+
+        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any> {
+
+            if (data) {
+                model.assignAll(data);
+            }
+
+            return this
+                ._executeCreate(resourceName, model.toObject(true))
+                .then(response => {
+
+                model = Service._updateModel(model, response.results);
+
+                if (model instanceof ActiveModel) {
+                    model.activate(this, resourceName);
+                }
+
+                return model;
             });
         }
 
-        protected _executeInSources(executor: (source:IDataSource) => ng.IPromise<any>): ng.IPromise<any> {
+        protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse> {
+
+            var response;
+
+            return this
+                ._executeSources((source: IDataSource) => {
+                    return source.create(resourceName, data);
+                })
+                .then(result => {
+
+                    response = result.response;
+
+                    var sourceIndex = this._sources.indexOf(result.source);
+
+                    return this._notifySources(sourceIndex, source => {
+                        return source.notifyCreate(response);
+                    });
+                })
+                .then(() => {
+                    return response;
+                });
+        }
+
+        /** Update **/
+
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<any> {
+
+            return this._executeUpdate(resourceName, resourceId, data).then(results => {
+                return this._createModels(results)[0] || null;
+            });
+        }
+
+        public updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void> {
+
+            return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(results => {
+
+                Service._updateModel(model, results);
+                return null;
+            });
+        }
+
+        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
+
+            var response;
+
+            return this
+                ._executeSources((source: IDataSource) => {
+                    return source.update(resourceName, resourceId, data);
+                })
+                .then(result => {
+
+                    response = result.response;
+
+                    var sourceIndex = this._sources.indexOf(result.source);
+
+                    return this._notifySources(sourceIndex, source => {
+                        return source.notifyUpdate(response);
+                    });
+                })
+                .then(() => {
+                    return response;
+                });
+        }
+
+        /** Remove **/
+
+        public remove(resourceName: string, resourceId: any): ng.IPromise<void> {
+
+            return this._executeRemove(resourceName, resourceId).then(() => { return null; });
+        }
+
+        public removeModel(resourceName: string, model: Model): ng.IPromise<void> {
+
+            return this._executeRemove(resourceName, model.getId()).then(() => {
+
+                Service._removeModel(model);
+                return null;
+            });
+        }
+
+        protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse> {
+
+            var response;
+
+            return this
+                ._executeSources((source: IDataSource) => {
+                    return source.remove(resourceName, resourceId);
+                })
+                .then(result => {
+
+                    response = result.response;
+
+                    var sourceIndex = this._sources.indexOf(result.source);
+
+                    return this._notifySources(sourceIndex, source => {
+                        return source.notifyRemove(response);
+                    });
+                })
+                .then(() => {
+                    return response;
+                });
+        }
+
+        /** Source **/
+
+        protected _notifySources(startIndex: number, executor: (source:IDataSource) => ng.IPromise<any>): ng.IPromise<any> {
+
+            var promises = [];
+
+            for (var sourceIndex = startIndex; sourceIndex >= 0; sourceIndex--) {
+
+                var source = this._sources.get(startIndex);
+                promises.push(executor(source));
+            }
+
+            return this.$q.all(promises);
+        }
+
+        protected _executeSources(executor: (source:IDataSource) => ng.IPromise<any>): ng.IPromise<IDataSourceExecutionResult> {
 
             var sourceIndex = 0;
             var deferred: ng.IDeferred<any> = this.$q.defer();
@@ -176,7 +331,10 @@ module TSCore.App.Data {
                 var source: IDataSource = this._sources.get(sourceIndex);
 
                 executor(source)
-                    .then(response => deferred.resolve(response))
+                    .then(response => deferred.resolve({
+                        response: response,
+                        source: source
+                    }))
                     .catch(() => nextSource());
 
                 sourceIndex++;
@@ -187,111 +345,29 @@ module TSCore.App.Data {
             return deferred.promise;
         }
 
-        /** Create **/
+        /** Model Helpers **/
 
-        public create(resourceName: string, data: any): ng.IPromise<any> {
+        protected static _updateModel(model, data): Model {
 
-            return this._executeCreate(resourceName, data).then(result => {
-                return this._createModels(result)[0] || null;
-            });
-        }
+            model.assignAll(data);
 
-        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any> {
-
-            if (data) {
-                model.assignAll(data);
+            if (model instanceof ActiveModel) {
+                model.setSavedData(data);
             }
 
-            return this._executeCreate(resourceName, model.toObject(true)).then((results: any) => {
-
-                this._updateModel(model, results);
-
-                if(model instanceof ActiveModel) {
-                    model.activate(this, resourceName);
-                }
-
-                return model;
-            });
+            return model;
         }
 
-        protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse> {
+        protected static _removeModel(model): Model {
 
-            return this._executeInSources((source: IDataSource) => {
-                return source.create(resourceName, data);
-            });
-        }
-
-        /** Update **/
-
-        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<any> {
-
-            return this._executeUpdate(resourceName, resourceId, data).then(results => {
-                return this._createModels(results)[0] || null;
-            });
-        }
-
-        protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
-
-            return this._executeInSources((source: IDataSource) => {
-                return source.update(resourceName, resourceId, data);
-            });
-        }
-
-        public updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void> {
-
-            return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(results => {
-
-                this._updateModel(model, results);
-                return null;
-            });
-        }
-
-        // TODO: Distribute results
-        protected _updateModel(model: Model, data: IDataSourceResponse) {
-
-            // TODO: Resolve data
-
-            /*
-             model.assignAll(data);
-
-             if(model instanceof ActiveModel){
-             model.setSavedData(data);
-             }
-             */
-        }
-
-        /** Remove **/
-
-        public remove(resourceName: string, resourceId: any): ng.IPromise<void> {
-
-            return this._executeRemove(resourceName, resourceId).then(() => { return null; });
-        }
-
-        public removeModel(resourceName: string, model: Model): ng.IPromise<void> {
-
-            return this._executeRemove(resourceName, model.getId()).then(() => {
-
-                this._removeModel(model);
-                return null;
-            });
-        }
-
-        protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse> {
-
-            return this._executeInSources((source: IDataSource) => {
-                return source.remove(resourceName, resourceId);
-            });
-        }
-
-        // TODO: Distribute results
-        protected _removeModel(model) {
-
-            if(model instanceof ActiveModel){
+            if (model instanceof ActiveModel) {
 
                 model.setSavedData(null);
                 model.markRemoved();
-                model.die();
+                model.deactivate();
             }
+
+            return model;
         }
     }
 }

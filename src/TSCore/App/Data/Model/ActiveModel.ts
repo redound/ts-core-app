@@ -27,7 +27,7 @@ module TSCore.App.Data.Model {
             this._flags.addMany([ActiveModelFlag.ACTIVATED, ActiveModelFlag.CREATED]);
         }
 
-        public die()
+        public deactivate()
         {
             this._dataService = null;
             this._resourceName = null;
