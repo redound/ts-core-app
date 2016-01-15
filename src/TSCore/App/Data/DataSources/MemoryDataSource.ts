@@ -26,9 +26,9 @@ module TSCore.App.Data.DataSources {
 
         public constructor(
             protected $q: ng.IQService,
-            protected logger: TSCore.Logger.Logger
+            protected logger?
         ) {
-            this.logger = this.logger.child('MemoryDataSource');
+            this.logger = (this.logger || new TSCore.Logger.Logger()).child('MemoryDataSource');
         }
 
         public setDataService(service: DataService) {

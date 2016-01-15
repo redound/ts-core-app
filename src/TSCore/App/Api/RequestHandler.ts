@@ -5,9 +5,10 @@ module TSCore.App.Api {
 
     import RequestOptions = TSCore.App.Http.RequestOptions;
     import Query = TSCore.App.Data.Query.Query;
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
 
-    export class RequestHandler {
-
+    export class RequestHandler implements IQueryExecutor
+    {
         public _resource: IResource;
 
         public constructor(protected httpService: TSCore.App.Http.Service) {
@@ -32,7 +33,7 @@ module TSCore.App.Api {
             return this.httpService.request(requestOptions);
         }
 
-        public query(query: Query): ng.IPromise<any> {
+        public execute(query: Query): ng.IPromise<any> {
 
             return this.request(
 
