@@ -29,8 +29,14 @@ module TSCore.App.Api {
 
         protected _registerRequestHandler(name, resource) {
             var requestHandler = resource.getRequestHandler();
+            requestHandler.setApiService(this);
+            requestHandler.setResourceName(name);
             requestHandler.setResource(resource);
             this[name] = requestHandler;
+        }
+
+        public getResource(name: string): IResource {
+            return this._resources.get(name);
         }
 
         public getResourceAsync(name: string): ng.IPromise<IResource> {

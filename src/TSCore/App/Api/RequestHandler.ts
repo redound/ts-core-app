@@ -1,5 +1,6 @@
 ///<reference path="../Http/RequestOptions.ts"/>
 ///<reference path="../Data/Query/Query.ts"/>
+///<reference path="Service.ts"/>
 
 module TSCore.App.Api {
 
@@ -8,10 +9,28 @@ module TSCore.App.Api {
 
     export class RequestHandler {
 
+        public _apiService: Service;
+        public _resourceName: string;
         public _resource: IResource;
 
         public constructor(protected httpService: TSCore.App.Http.Service) {
 
+        }
+
+        public setApiService(apiService: Service) {
+            this._apiService = apiService;
+        }
+
+        public getApiService(): Service {
+            return this._apiService;
+        }
+
+        public setResourceName(name: string) {
+            this._resourceName = name;
+        }
+
+        public getResourceName(): string {
+            return this._resourceName;
         }
 
         public setResource(resource: IResource) {

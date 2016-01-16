@@ -1,6 +1,9 @@
+///<reference path="Reference.ts"/>
+
 module TSCore.App.Data.Graph {
 
     import Exception = TSCore.Exception.Exception;
+
     export class Graph {
 
         protected _data: any;
@@ -11,6 +14,14 @@ module TSCore.App.Data.Graph {
 
         public clear() {
             this._data = {};
+        }
+
+        public setData(data: any) {
+            this._data = data;
+        }
+
+        public getData(): any {
+            return this._data;
         }
 
         public get(path?: any[], callback?: any) {
@@ -159,9 +170,17 @@ module TSCore.App.Data.Graph {
             this.unset([resourceName, resourceId]);
         }
 
+        public getReferences(resourceName: string): Reference[] {
+
+            return _.map(this._data[resourceName], (item: any, resourceId: any) => {
+
+                return new Reference(resourceName, resourceId);
+            });
+        }
+
         public merge(graph: Graph)
         {
-            this.mergeData(graph.get());
+            this.mergeData(graph.getData());
         }
 
         public mergeData(data: any){
@@ -171,7 +190,8 @@ module TSCore.App.Data.Graph {
                 _.each(resources, (item, resourceId) => {
 
                     var currentItem = this.getItem(resourceName, resourceId);
-                    if(!currentItem){
+
+                    if (!currentItem) {
                         this.setItem(resourceName, resourceId, item);
                     }
                     else {
@@ -208,7 +228,7 @@ module TSCore.App.Data.Graph {
                 }
             }
 
-            if (!_.isArray(value) && callback) {
+            if (_.isObject(value) && !_.isArray(value) && callback) {
 
                 if (this._isResourceName(key)) {
                     value = callback(key, value);
