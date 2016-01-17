@@ -18,6 +18,26 @@ module TSCore.App.Data.Query {
         protected _sorters: Sorter[] = [];
         protected _find: any;
 
+        protected _executor: IQueryExecutor;
+
+        public constructor(executor?: IQueryExecutor) {
+            this._executor = executor;
+        }
+
+        public executor(executor: IQueryExecutor): Query {
+
+            this._executor = executor;
+            return this;
+        }
+
+        public getExecutor(): IQueryExecutor {
+            return this._executor;
+        }
+
+        public hasExecutor(): boolean {
+            return !!this._executor;
+        }
+
         public from(from: string): Query {
 
             this._from = from;
@@ -145,6 +165,15 @@ module TSCore.App.Data.Query {
         public hasFind(): boolean {
 
             return !!this._find;
+        }
+
+        public execute(): ng.IPromise<any> {
+
+            if(!this.hasExecutor()) {
+                throw 'Unable to execute query, no executor set';
+            }
+
+            return this._executor.execute(this);
         }
 
         public merge(query: Query): Query {

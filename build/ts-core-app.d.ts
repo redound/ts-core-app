@@ -65,19 +65,29 @@ declare module TSCore.App.Data.Graph {
         protected _data: any;
         constructor(data?: any);
         clear(): void;
+        setData(data: any): void;
+        getData(): any;
         get(path?: any[], callback?: any): any;
+        setValue(): void;
+        getValue(path?: any[]): any;
+        getGraphForPath(path: any[]): Graph;
+        getGraphForReferences(references: Reference[]): Graph;
+        _getValueForPath(path: any): any;
         protected _optimizePath(path?: any[]): any[];
         set(path: any[], value: any): Graph;
         unset(path: any[]): Graph;
+        hasItem(resourceName: string, resourceId: any): boolean;
         setItem(resourceName: string, resourceId: any, resource: any): void;
         getItem(resourceName: string, resourceId: any): any;
         setItems(resourceName: string, items: any): void;
         getItems(resourceName: string): any;
         removeItems(resourceName: string): void;
         removeItem(resourceName: string, resourceId: number): void;
+        getReferences(resourceName: string): Reference[];
         merge(graph: Graph): void;
         mergeData(data: any): void;
         protected _isReference(value: any): boolean;
+        protected _extractReferences(data: any, callback: any): void;
         protected _resolveValueRecursive(parentKey: any, key: any, value: any, callback?: any): any;
         protected _isResourceName(resourceName: string): boolean;
     }
@@ -158,6 +168,11 @@ declare module TSCore.App.Data.Query {
         protected _conditions: Condition[];
         protected _sorters: Sorter[];
         protected _find: any;
+        protected _executor: IQueryExecutor;
+        constructor(executor?: IQueryExecutor);
+        executor(executor: IQueryExecutor): Query;
+        getExecutor(): IQueryExecutor;
+        hasExecutor(): boolean;
         from(from: string): Query;
         getFrom(): string;
         hasFrom(): boolean;
@@ -182,22 +197,56 @@ declare module TSCore.App.Data.Query {
         find(id: any): Query;
         getFind(): any;
         hasFind(): boolean;
+        execute(): ng.IPromise<any>;
         merge(query: Query): Query;
         serialize(opts: string[]): string;
         static from(from: any): Query;
     }
 }
+declare module TSCore.App.Data.Query {
+    interface IQueryExecutor {
+        execute(query: Query): ng.IPromise<any>;
+    }
+}
+declare module TSCore.App.Api {
+    import Query = TSCore.App.Data.Query.Query;
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    class Service implements IQueryExecutor {
+        protected $q: any;
+        constructor($q: any);
+        protected _resources: TSCore.Data.Dictionary<string, IResource>;
+        setResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
+        resource(name: string, resource: IResource): Service;
+        getResource(name: string): IResource;
+        getResourceAsync(name: string): ng.IPromise<IResource>;
+        getRequestHandler(resourceName: string): RequestHandler;
+        getRequestHandlerAsync(resourceName: string): ng.IPromise<RequestHandler>;
+        execute(query: Query): ng.IPromise<any>;
+        all(resourceName: string): ng.IPromise<any>;
+        find(resourceName: string, resourceId: number): ng.IPromise<any>;
+        create(resourceName: string, data: any): ng.IPromise<any>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
+        remove(resourceName: string, resourceId: any): ng.IPromise<any>;
+    }
+}
 declare module TSCore.App.Api {
     import RequestOptions = TSCore.App.Http.RequestOptions;
     import Query = TSCore.App.Data.Query.Query;
-    class RequestHandler {
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    class RequestHandler implements IQueryExecutor {
         protected httpService: TSCore.App.Http.Service;
+        _apiService: Service;
+        _resourceName: string;
         _resource: IResource;
         constructor(httpService: TSCore.App.Http.Service);
+        setApiService(apiService: Service): void;
+        getApiService(): Service;
+        setResourceName(name: string): void;
+        getResourceName(): string;
         setResource(resource: IResource): void;
         getResource(): IResource;
         request(requestOptions: RequestOptions): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
-        query(query: Query): ng.IPromise<any>;
+        execute(query: Query): ng.IPromise<any>;
         all(): ng.IPromise<any>;
         find(id: number): ng.IPromise<any>;
         create(data: {}): ng.IPromise<any>;
@@ -211,25 +260,6 @@ declare module TSCore.App.Api {
         protected _transformRemove(response: ng.IHttpPromiseCallbackArg<{}>): any;
         protected _transformMultiple(response: ng.IHttpPromiseCallbackArg<{}>): any;
         protected _transformSingle(response: ng.IHttpPromiseCallbackArg<{}>): any;
-    }
-}
-declare module TSCore.App.Api {
-    import Query = TSCore.App.Data.Query.Query;
-    class Service {
-        protected $q: any;
-        constructor($q: any);
-        protected _resources: TSCore.Data.Dictionary<string, IResource>;
-        manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
-        resource(name: string, resource: IResource): Service;
-        protected _registerRequestHandler(name: any, resource: any): void;
-        getResourceAsync(name: string): ng.IPromise<IResource>;
-        protected _getRequestHandler(resourceName: string): ng.IPromise<RequestHandler>;
-        execute(query: Query): ng.IPromise<any>;
-        all(resourceName: string): ng.IPromise<any>;
-        find(resourceName: string, resourceId: number): ng.IPromise<any>;
-        create(resourceName: string, data: any): ng.IPromise<any>;
-        update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
-        remove(resourceName: string, resourceId: any): ng.IPromise<any>;
     }
 }
 declare module TSCore.App {
@@ -335,31 +365,34 @@ declare module TSCore.App.Data {
     import IDataSource = TSCore.App.Data.IDataSource;
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
     import Model = TSCore.Data.Model;
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
     interface IDataSourceExecutionResult {
         response: IDataSourceResponse;
         source: IDataSource;
     }
-    class Service {
+    class Service implements IQueryExecutor {
         protected $q: ng.IQService;
         protected _sources: List<IDataSource>;
         protected _resources: TSCore.Data.Dictionary<string, IResource>;
+        protected _resourceDelegateCache: TSCore.Data.Dictionary<string, ResourceDelegate<Model>>;
         constructor($q: ng.IQService);
         source(source: IDataSource): Service;
         getSources(): List<IDataSource>;
-        manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
+        setResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
         resource(name: string, resource: IResource): Service;
         getResources(): TSCore.Data.Dictionary<string, IResource>;
         getResource(name: string): IResource;
         getResourceAsync(name: string): ng.IPromise<Resource>;
+        getResourceDelegate<T extends Model>(resourceName: string): ResourceDelegate<T>;
         query(resourceName: string): Query;
-        all(resourceName: string): ng.IPromise<any>;
+        all(resourceName: string): ng.IPromise<Model[]>;
         find(resourceName: string, resourceId: any): ng.IPromise<Model>;
-        execute(query: Query): ng.IPromise<any>;
+        execute(query: Query): ng.IPromise<Model[]>;
         protected _createModels(response: IDataSourceResponse): Model[];
-        create(resourceName: string, data: any): ng.IPromise<any>;
-        createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any>;
+        create(resourceName: string, data: any): ng.IPromise<Model>;
+        createModel(resourceName: string, model: Model, data?: any): ng.IPromise<Model>;
         protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
-        update(resourceName: string, resourceId: any, data: any): ng.IPromise<any>;
+        update(resourceName: string, resourceId: any, data: any): ng.IPromise<Model>;
         updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void>;
         protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<void>;
@@ -386,13 +419,14 @@ declare module TSCore.App.Data.DataSources {
     import IDataSource = TSCore.App.Data.IDataSource;
     import Query = TSCore.App.Data.Query.Query;
     import DataService = TSCore.App.Data.Service;
-    class ApiDataSource implements IDataSource {
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    class ApiDataSource implements IDataSource, IQueryExecutor {
         protected $q: ng.IQService;
-        protected logger: TSCore.Logger.Logger;
         protected apiService: TSCore.App.Api.Service;
+        protected logger: TSCore.Logger.Logger;
         protected _dataService: DataService;
         protected _resourceAliasMap: TSCore.Data.Dictionary<string, string>;
-        constructor($q: ng.IQService, logger: TSCore.Logger.Logger, apiService: TSCore.App.Api.Service);
+        constructor($q: ng.IQService, apiService: TSCore.App.Api.Service, logger?: TSCore.Logger.Logger);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
@@ -429,12 +463,12 @@ declare module TSCore.App.Data.DataSources {
     }
     class MemoryDataSource implements IDataSource {
         protected $q: ng.IQService;
-        protected logger: TSCore.Logger.Logger;
+        protected logger: any;
         static QUERY_SERIALIZE_FIELDS: string[];
         protected _dataService: DataService;
         protected _graph: Graph;
         protected _queryResultMap: TSCore.Data.Dictionary<string, IQueryResult>;
-        constructor($q: ng.IQService, logger: TSCore.Logger.Logger);
+        constructor($q: ng.IQService, logger?: any);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query): ng.IPromise<IDataSourceResponse>;
@@ -453,6 +487,24 @@ declare module TSCore.App.Data {
         getModel(): TSCore.Data.IModel;
         getSingleKey(): string;
         getMultipleKey(): string;
+    }
+}
+declare module TSCore.App.Data {
+    import Model = TSCore.Data.Model;
+    import Query = TSCore.App.Data.Query.Query;
+    class ResourceDelegate<T extends Model> {
+        protected _dataService: Service;
+        protected _resourceName: string;
+        constructor(dataService: Service, resourceName: string);
+        query(): Query;
+        all(): ng.IPromise<T[]>;
+        find(resourceId: any): ng.IPromise<T>;
+        create(data: any): ng.IPromise<T>;
+        createModel(model: T, data?: any): ng.IPromise<T>;
+        update(resourceId: any, data: any): ng.IPromise<T>;
+        updateModel(model: T, data?: any): ng.IPromise<void>;
+        remove(resourceId: any): ng.IPromise<void>;
+        removeModel(model: Model): ng.IPromise<void>;
     }
 }
 declare module TSCore.App.Http {

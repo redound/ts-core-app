@@ -14,16 +14,19 @@ module TSCore.App.Data {
     import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
     import Model = TSCore.Data.Model;
     import Exception = TSCore.Exception.Exception;
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
 
     export interface IDataSourceExecutionResult {
         response: IDataSourceResponse,
         source: IDataSource
     }
 
-    export class Service {
-
+    export class Service implements IQueryExecutor
+    {
         protected _sources: List<IDataSource> = new List<IDataSource>();
         protected _resources: TSCore.Data.Dictionary<string, IResource> = new TSCore.Data.Dictionary<string, IResource>();
+
+        protected _resourceDelegateCache: TSCore.Data.Dictionary<string, ResourceDelegate<Model>> = new TSCore.Data.Dictionary<string, ResourceDelegate<Model>>();
 
         public constructor(protected $q: ng.IQService) {
 
@@ -32,8 +35,10 @@ module TSCore.App.Data {
         /** Data Sources **/
 
         public source(source: IDataSource) {
+
             this._sources.add(source);
             source.setDataService(this);
+
             return this;
         }
 
@@ -43,17 +48,14 @@ module TSCore.App.Data {
 
         /** Resources **/
 
-        public manyResources(resources: TSCore.Data.Dictionary<string, IResource>): Service {
+        public setResources(resources: TSCore.Data.Dictionary<string, IResource>): Service {
 
-            resources.each((resourceName, resource) => {
-                this._resources.set(resourceName, resource);
-            });
-
+            this._resources = resources.clone();
             return this;
         }
 
         public resource(name: string, resource: IResource) {
-            this[name] = resource;
+
             this._resources.set(name, resource);
             return this;
         }
@@ -80,38 +82,44 @@ module TSCore.App.Data {
             return deferred.promise;
         }
 
+        public getResourceDelegate<T extends Model>(resourceName: string): ResourceDelegate<T> {
+
+            if(this._resourceDelegateCache.contains(resourceName)){
+                return this._resourceDelegateCache.get(resourceName)
+            }
+
+            var delegate = new ResourceDelegate<T>(this, resourceName);
+            this._resourceDelegateCache.set(resourceName, delegate);
+
+            return delegate;
+        }
+
         /** Query **/
 
         public query(resourceName: string): Query {
 
-            return Query.from(resourceName);
+            return new Query(this).from(resourceName);
         }
 
-        public all(resourceName: string): ng.IPromise<any> {
+        public all(resourceName: string): ng.IPromise<Model[]> {
 
-            return this.execute(
-
-                Query
-                    .from(resourceName)
-
-            );
+            return this.execute(this.query(resourceName));
         }
 
         public find(resourceName: string, resourceId: any): ng.IPromise<Model> {
 
             return this.execute(
 
-                Query
-                    .from(resourceName)
+                this.query(resourceName)
                     .find(resourceId)
 
             ).then(results => {
 
-                return results[0] || null;
+                return results.length > 0 ? results[0] : null;
             });
         }
 
-        public execute(query: Query): ng.IPromise<any> {
+        public execute(query: Query): ng.IPromise<Model[]> {
 
             var response;
 
@@ -173,7 +181,7 @@ module TSCore.App.Data {
 
         /** Create **/
 
-        public create(resourceName: string, data: any): ng.IPromise<any> {
+        public create(resourceName: string, data: any): ng.IPromise<Model> {
 
             return this
                 ._executeCreate(resourceName, data)
@@ -182,7 +190,7 @@ module TSCore.App.Data {
                 });
         }
 
-        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<any> {
+        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<Model> {
 
             if (data) {
                 model.assignAll(data);
@@ -231,7 +239,7 @@ module TSCore.App.Data {
 
         /** Update **/
 
-        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<any> {
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<Model> {
 
             return this._executeUpdate(resourceName, resourceId, data).then(results => {
                 return this._createModels(results)[0] || null;

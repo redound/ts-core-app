@@ -1,5 +1,6 @@
 ///<reference path="../IDataSource.ts"/>
 ///<reference path="../Query/Query.ts"/>
+///<reference path="../Query/IQueryExecutor.ts"/>
 ///<reference path="../Service.ts"/>
 ///<reference path="../Graph/Builder.ts"/>
 ///<reference path="../Graph/Reference.ts"/>
@@ -11,18 +12,19 @@ module TSCore.App.Data.DataSources {
     import DataService = TSCore.App.Data.Service;
     import Builder = TSCore.App.Data.Graph.Builder;
     import Reference = TSCore.App.Data.Graph.Reference;
+    import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
 
-    export class ApiDataSource implements IDataSource {
-
+    export class ApiDataSource implements IDataSource, IQueryExecutor
+    {
         protected _dataService: DataService;
         protected _resourceAliasMap: TSCore.Data.Dictionary<string, string>;
 
         public constructor(
             protected $q: ng.IQService,
-            protected logger: TSCore.Logger.Logger,
-            protected apiService: TSCore.App.Api.Service
+            protected apiService: TSCore.App.Api.Service,
+            protected logger?: TSCore.Logger.Logger
         ) {
-            this.logger = this.logger.child('ApiDataSource');
+            this.logger = (this.logger || new TSCore.Logger.Logger()).child('ApiDataSource');
         }
 
         public setDataService(service: DataService) {

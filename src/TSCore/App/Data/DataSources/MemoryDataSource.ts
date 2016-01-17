@@ -26,9 +26,9 @@ module TSCore.App.Data.DataSources {
 
         public constructor(
             protected $q: ng.IQService,
-            protected logger: TSCore.Logger.Logger
+            protected logger?
         ) {
-            this.logger = this.logger.child('MemoryDataSource');
+            this.logger = (this.logger || new TSCore.Logger.Logger()).child('MemoryDataSource');
         }
 
         public setDataService(service: DataService) {
@@ -43,6 +43,29 @@ module TSCore.App.Data.DataSources {
         {
             this.logger.info('execute');
 
+            if (query.hasFind()) {
+
+                var resourceName = query.getFrom();
+                var resourceId = query.getFind();
+
+                if (this._graph.hasItem(resourceName, resourceId)) {
+
+                    var references = [new Reference(resourceName, resourceId)];
+
+                    var response = {
+                        data: this._graph.getGraphForReferences(references),
+                        results: references
+                    };
+
+                    this.logger.info('resolve', response);
+
+                    return this.$q.when(response);
+
+                } else {
+                    return this.$q.reject();
+                }
+            }
+
             var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
 
             var queryResult = this._queryResultMap.get(serializedQuery);
@@ -51,11 +74,14 @@ module TSCore.App.Data.DataSources {
 
                 this.logger.info('resolve cached results');
 
-                // TODO: Just send part of graph needed
-                return this.$q.when({
-                    data: this._graph,
+                var response = {
+                    data: this._graph.getGraphForReferences(queryResult.references),
                     results: _.clone(queryResult.references)
-                });
+                };
+
+                this.logger.info('resolve', response);
+
+                return this.$q.when(response);
             }
 
             // TODO
@@ -85,7 +111,6 @@ module TSCore.App.Data.DataSources {
             // TODO
             return this.$q.reject();
         }
-
 
         public notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void> {
 

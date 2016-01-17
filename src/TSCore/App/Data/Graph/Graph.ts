@@ -26,35 +26,86 @@ module TSCore.App.Data.Graph {
 
         public get(path?: any[], callback?: any) {
 
-            if (!path) {
-                return this._resolveValueRecursive(null, null, this._data, callback);
+            path = this._optimizePath(path);
+
+            var value = this._getValueForPath(path);
+
+            function getAtEndIndex(path, index) {
+                path = _.clone(path) || [];
+                path.reverse();
+                return path[index] || null;
             }
+
+            var parentKey = getAtEndIndex(path, 1);
+            var key = getAtEndIndex(path, 0);
+
+            return this._resolveValueRecursive(parentKey, key, value, callback);
+        }
+
+        public setValue() {
+
+        }
+
+        public getValue(path?: any[]) {
 
             path = this._optimizePath(path);
 
-            if (!path) {
-                return null;
+            return this._getValueForPath(path);
+        }
+
+        public getGraphForPath(path: any[]): Graph {
+
+            var graph = new Graph();
+            var value = this.getValue(path);
+
+            this._extractReferences(value, reference => {
+
+                var referencePath = reference.value;
+                var referenceValue = this.getValue(referencePath);
+
+                if (referenceValue) {
+                    graph.set(referencePath, referenceValue);
+                }
+            });
+
+            if (value) {
+                graph.set(path, value);
             }
 
-            var root = this._data;
-            var parentKey = null;
-            var key = null;
+            return graph;
+        }
 
-            for (var i = 0; i < path.length; i++) {
+        public getGraphForReferences(references: Reference[]): Graph {
+
+            var graph = new Graph;
+
+            _.each(references, reference => {
+
+                var pathGraph = this.getGraphForPath(reference.value);
+                graph.merge(pathGraph);
+            });
+
+            return graph;
+        }
+
+        public _getValueForPath(path) {
+
+            var root = path ? this._data : null;
+            var pathLength = path && path.length ? path.length : 0;
+
+            for (var i = 0; i < pathLength; i++) {
 
                 var part = path[i];
 
                 if (root[part] !== void 0) {
                     root = root[part];
-                    parentKey = key;
-                    key = part;
                 } else {
                     root = null;
                     break;
                 }
             }
 
-            return this._resolveValueRecursive(parentKey, key, root, callback);
+            return root;
         }
 
         protected _optimizePath(path?: any[]): any[] {
@@ -146,6 +197,10 @@ module TSCore.App.Data.Graph {
             return this;
         }
 
+        public hasItem(resourceName: string, resourceId: any): boolean {
+            return !!this._optimizePath([resourceName, resourceId]);
+        }
+
         public setItem(resourceName: string, resourceId: any, resource: any) {
             this.set([resourceName, resourceId], resource);
         }
@@ -203,6 +258,31 @@ module TSCore.App.Data.Graph {
 
         protected _isReference(value: any): boolean {
             return (value && value.$type && value.$type == "ref");
+        }
+
+        protected _extractReferences(data, callback) {
+
+            if (!_.isObject(data)) {
+                return;
+            }
+
+            _.each(data, value => {
+
+                if (this._isReference(value)) {
+
+                    var reference = <Reference>value;
+
+                    value = this.getValue(reference.value);
+
+                    this._extractReferences(value, callback);
+
+                    callback(reference);
+
+                } else {
+
+                    this._extractReferences(value, callback);
+                }
+            });
         }
 
         protected _resolveValueRecursive(parentKey, key, value, callback?: any) {
