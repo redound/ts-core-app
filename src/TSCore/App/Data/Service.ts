@@ -21,6 +21,11 @@ module TSCore.App.Data {
         source: IDataSource
     }
 
+    export interface IDataServiceResponse<T> {
+        response: IDataSourceResponse,
+        data: T
+    }
+
     export class Service implements IQueryExecutor
     {
         protected _sources: List<IDataSource> = new List<IDataSource>();
@@ -96,30 +101,33 @@ module TSCore.App.Data {
 
         /** Query **/
 
-        public query(resourceName: string): Query {
+        public query(resourceName: string): Query<ModelList<Model>> {
 
-            return new Query(this).from(resourceName);
+            return new Query<ModelList<Model>>(this).from(resourceName);
         }
 
-        public all(resourceName: string): ng.IPromise<Model[]> {
+        public all(resourceName: string): ng.IPromise<IDataServiceResponse<ModelList<Model>>> {
 
             return this.execute(this.query(resourceName));
         }
 
-        public find(resourceName: string, resourceId: any): ng.IPromise<Model> {
+        public find(resourceName: string, resourceId: any): ng.IPromise<IDataServiceResponse<Model>> {
 
             return this.execute(
 
                 this.query(resourceName)
                     .find(resourceId)
 
-            ).then(results => {
+            ).then(response => {
 
-                return results.length > 0 ? results[0] : null;
+                return {
+                    response: response.response,
+                    data: response.data.first()
+                }
             });
         }
 
-        public execute(query: Query): ng.IPromise<Model[]> {
+        public execute(query: Query<ModelList<Model>>): ng.IPromise<IDataServiceResponse<ModelList<Model>>> {
 
             var response;
 
@@ -141,20 +149,24 @@ module TSCore.App.Data {
                 });
             })
             .then(() => {
-                return this._createModels(response);
+
+                return {
+                    response: response,
+                    data: this._createModels(response)
+                };
             });
         }
 
-        protected _createModels(response: IDataSourceResponse): Model[] {
+        protected _createModels(response: IDataSourceResponse): ModelList<Model> {
 
-            var data = response.data;
-            var results = response.results;
+            var graph = response.graph;
+            var references = response.references;
 
-            var models = [];
+            var models = new ModelList();
 
-            _.each(results, (result) => {
+            _.each(references, reference => {
 
-                var resolveModel = data.get(result.value, (resourceName: string, item: any) => {
+                var resolveModel = graph.get(reference.value, (resourceName: string, item: any) => {
 
                     var resource = this.getResource(resourceName);
                     var modelClass = resource.getModel();
@@ -164,7 +176,7 @@ module TSCore.App.Data {
                     if (model instanceof ActiveModel) {
 
                         model.activate(this, resourceName);
-                        model.setSavedData(data);
+                        model.setSavedData(graph);
                     }
 
                     return model;
@@ -172,7 +184,7 @@ module TSCore.App.Data {
 
                 if (resolveModel) {
 
-                    models.push(resolveModel);
+                    models.add(resolveModel);
                 }
             });
 
@@ -181,32 +193,35 @@ module TSCore.App.Data {
 
         /** Create **/
 
-        public create(resourceName: string, data: any): ng.IPromise<Model> {
+        public create(resourceName: string, data: any): ng.IPromise<IDataServiceResponse<Model>> {
 
-            return this
-                ._executeCreate(resourceName, data)
-                .then(response => {
-                    return this._createModels(response)[0] || null;
-                });
+            return this._executeCreate(resourceName, data).then(response => {
+
+                return {
+                    response: response,
+                    data: this._createModels(response)[0] || null
+                };
+            });
         }
 
-        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<Model> {
+        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<IDataServiceResponse<Model>> {
 
             if (data) {
                 model.assignAll(data);
             }
 
-            return this
-                ._executeCreate(resourceName, model.toObject(true))
-                .then(response => {
+            return this._executeCreate(resourceName, model.toObject(true)).then(response => {
 
-                model = Service._updateModel(model, response.results);
+                model = Service._updateModel(model, response.references);
 
                 if (model instanceof ActiveModel) {
                     model.activate(this, resourceName);
                 }
 
-                return model;
+                return {
+                    response: response,
+                    data: model
+                };
             });
         }
 
@@ -233,16 +248,21 @@ module TSCore.App.Data {
                     });
                 })
                 .then(() => {
+
                     return response;
                 });
         }
 
         /** Update **/
 
-        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<Model> {
+        public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataServiceResponse<Model>> {
 
-            return this._executeUpdate(resourceName, resourceId, data).then(results => {
-                return this._createModels(results)[0] || null;
+            return this._executeUpdate(resourceName, resourceId, data).then(response => {
+
+                return {
+                    response: response,
+                    data: this._createModels(response)[0] || null
+                };
             });
         }
 

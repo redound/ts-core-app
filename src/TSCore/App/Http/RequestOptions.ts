@@ -7,6 +7,7 @@ module TSCore.App.Http {
         protected _url: string;
         protected _data: {};
         protected _options: {};
+        protected _params: {};
 
         public header(name, value) {
             this._headers = this._headers || {};
@@ -111,13 +112,24 @@ module TSCore.App.Http {
             return this._options;
         }
 
+        public param(name: string, value?: any) {
+            this._params = this._params || {};
+            this._params[name] = value;
+            return this;
+        }
+
+        public getParams(): any {
+            return this._params;
+        }
+
         public getRequestConfig(): ng.IRequestConfig {
 
             return _.extend({
                 headers: this.getHeaders(),
                 method: this.getMethod(),
                 url: this.getUrl(),
-                data: this.getData()
+                data: this.getData(),
+                params: this.getParams()
             }, this.getOptions());
         }
 

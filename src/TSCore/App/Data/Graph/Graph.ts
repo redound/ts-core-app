@@ -217,6 +217,10 @@ module TSCore.App.Data.Graph {
             return this.get([resourceName]);
         }
 
+        public countItems(resourceName: string): number {
+            return this.getItems(resourceName).length;
+        }
+
         public removeItems(resourceName: string) {
             this.unset([resourceName]);
         }

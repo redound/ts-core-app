@@ -74,11 +74,13 @@ module TSCore.App.Data.Model {
                 throw new Exception('Unable to refresh ' + this.getResourceIdentifier() + ', model is not alive');
             }
 
-            return this._dataService.find(this._resourceName, this.getId()).then((result: Model) => {
+            return this._dataService.find(this._resourceName, this.getId()).then((response: IDataServiceResponse<Model>) => {
 
-                if(!this.equals(result)) {
+                var model = response.data;
 
-                    this.merge(result);
+                if(model instanceof Model && !this.equals(model)) {
+
+                    this.merge(model);
                     return true;
                 }
 

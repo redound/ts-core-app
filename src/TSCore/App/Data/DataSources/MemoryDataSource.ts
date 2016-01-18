@@ -10,10 +10,16 @@ module TSCore.App.Data.DataSources {
     import DataService = TSCore.App.Data.Service;
     import Graph = TSCore.App.Data.Graph.Graph;
     import Reference = TSCore.App.Data.Graph.Reference;
+    import DynamicList = TSCore.Data.DynamicList;
 
     export interface IQueryResult {
-        query: Query,
-        references: Reference[]
+        query: Query<any>,
+        references: DynamicList<Reference>,
+        meta: IDataSourceResponseMeta
+    }
+
+    export enum ResourceFlag {
+        DATA_COMPLETE
     }
 
     export class MemoryDataSource implements IDataSource {
@@ -23,6 +29,7 @@ module TSCore.App.Data.DataSources {
         protected _dataService: DataService;
         protected _graph: Graph = new Graph;
         protected _queryResultMap: TSCore.Data.Dictionary<string, IQueryResult> = new TSCore.Data.Dictionary<string, IQueryResult>();
+        protected _resourceFlags: TSCore.Data.Dictionary<string, TSCore.Data.Collection<ResourceFlag>> = new TSCore.Data.Dictionary<string, TSCore.Data.Collection<ResourceFlag>>();
 
         public constructor(
             protected $q: ng.IQService,
@@ -39,32 +46,9 @@ module TSCore.App.Data.DataSources {
             return this._dataService;
         }
 
-        public execute(query: Query): ng.IPromise<IDataSourceResponse>
+        public execute(query: Query<any>): ng.IPromise<IDataSourceResponse>
         {
             this.logger.info('execute');
-
-            if (query.hasFind()) {
-
-                var resourceName = query.getFrom();
-                var resourceId = query.getFind();
-
-                if (this._graph.hasItem(resourceName, resourceId)) {
-
-                    var references = [new Reference(resourceName, resourceId)];
-
-                    var response = {
-                        data: this._graph.getGraphForReferences(references),
-                        results: references
-                    };
-
-                    this.logger.info('resolve', response);
-
-                    return this.$q.when(response);
-
-                } else {
-                    return this.$q.reject();
-                }
-            }
 
             var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
 
@@ -72,11 +56,34 @@ module TSCore.App.Data.DataSources {
 
             if (queryResult) {
 
+                if (this._resourceHasFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE)) {
+
+                    var response = this._executeOnGraph(query);
+
+                    if (response) {
+                        return this.$q.when(response);
+                    }
+
+                    return this.$q.reject();
+                }
+
+                var referenceList = queryResult.references;
+                var offset = query.getOffset();
+                var limit = query.getLimit();
+
+                if (!referenceList.containsRange(offset, limit)) {
+
+                    return this.$q.reject();
+                }
+
+                var references = referenceList.getRange(offset, limit);
+
                 this.logger.info('resolve cached results');
 
                 var response = {
-                    data: this._graph.getGraphForReferences(queryResult.references),
-                    results: _.clone(queryResult.references)
+                    meta: queryResult.meta,
+                    graph: this._graph.getGraphForReferences(references),
+                    references: _.clone(references)
                 };
 
                 this.logger.info('resolve', response);
@@ -86,6 +93,11 @@ module TSCore.App.Data.DataSources {
 
             // TODO
             return this.$q.reject();
+        }
+
+        protected _executeOnGraph(query: Query<any>): IDataSourceResponse {
+
+            return null;
         }
 
         public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>
@@ -112,20 +124,66 @@ module TSCore.App.Data.DataSources {
             return this.$q.reject();
         }
 
-        public notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void> {
+        public notifyExecute(query: Query<any>, response: IDataSourceResponse): ng.IPromise<void> {
 
             this.logger.info('notifyExecute - query ', query, ' - response', response);
 
+            this._graph.merge(response.graph);
+
             var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
 
-            this._graph.merge(response.data);
+            var references = _.clone(response.references);
 
-            this._queryResultMap.set(serializedQuery, {
-                query: _.clone(query),
-                references: _.clone(response.results)
-            });
+            var offset = query.getOffset() || 0;
+
+            if ((response.meta.total && this._graph.countItems(query.getFrom()) === response.meta.total) || (!query.hasOffset() && !query.hasLimit())) {
+
+                this._setResourceFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE);
+            }
+
+            var queryResult = this._queryResultMap.get(serializedQuery);
+
+            if (!queryResult) {
+
+                queryResult = {
+                    meta: response.meta,
+                    query: _.clone(query),
+                    references: new DynamicList<Reference>()
+                };
+            }
+
+            queryResult.references.setRange(offset, references);
+
+            console.log('update queryResult', queryResult);
+
+            this._queryResultMap.set(serializedQuery, queryResult);
 
             return this.$q.when();
+        }
+
+        protected _resourceHasFlag(resourceName: string, flag: ResourceFlag): boolean {
+
+            var flags = this._resourceFlags.get(resourceName);
+
+            if (!flags) {
+                return false;
+            }
+
+            return flags.contains(flag);
+        }
+
+        protected _setResourceFlag(resourceName: string, flag: ResourceFlag) {
+
+            console.log('resourceName', resourceName, 'flag', flag);
+
+            var flags = this._resourceFlags.get(resourceName);
+
+            if (!flags) {
+                flags = new TSCore.Data.Collection<ResourceFlag>();
+                this._resourceFlags.set(resourceName, flags);
+            }
+
+            flags.add(flag);
         }
 
         public notifyCreate(response: IDataSourceResponse): ng.IPromise<void> {

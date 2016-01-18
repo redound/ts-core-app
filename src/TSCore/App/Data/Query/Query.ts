@@ -8,7 +8,7 @@ module TSCore.App.Data.Query {
     import Condition = TSCore.App.Data.Query.Condition;
     import Sorter = TSCore.App.Data.Query.Sorter;
 
-    export class Query {
+    export class Query<T> {
 
         protected _from: string;
         protected _offset: number = null;
@@ -16,6 +16,7 @@ module TSCore.App.Data.Query {
         protected _fields: string[] = [];
         protected _conditions: Condition[] = [];
         protected _sorters: Sorter[] = [];
+        protected _includes: string[] = [];
         protected _find: any;
 
         protected _executor: IQueryExecutor;
@@ -24,7 +25,7 @@ module TSCore.App.Data.Query {
             this._executor = executor;
         }
 
-        public executor(executor: IQueryExecutor): Query {
+        public executor(executor: IQueryExecutor): Query<T> {
 
             this._executor = executor;
             return this;
@@ -38,7 +39,7 @@ module TSCore.App.Data.Query {
             return !!this._executor;
         }
 
-        public from(from: string): Query {
+        public from(from: string): Query<T> {
 
             this._from = from;
             return this;
@@ -53,13 +54,13 @@ module TSCore.App.Data.Query {
             return !!this._from;
         }
 
-        public field(field: string): Query {
+        public field(field: string): Query<T> {
 
             this._fields.push(field);
             return this;
         }
 
-        public addManyFields(fields: string[]): Query {
+        public addManyFields(fields: string[]): Query<T> {
 
             this._fields = this._fields.concat(fields);
             return this;
@@ -75,7 +76,7 @@ module TSCore.App.Data.Query {
             return (this._fields.length > 0);
         }
 
-        public offset(offset: number): Query {
+        public offset(offset: number): Query<T> {
 
             this._offset = offset;
             return this;
@@ -91,7 +92,7 @@ module TSCore.App.Data.Query {
             return _.isNumber(this._offset);
         }
 
-        public limit(limit: number): Query {
+        public limit(limit: number): Query<T> {
 
             this._limit = limit;
             return this;
@@ -107,13 +108,13 @@ module TSCore.App.Data.Query {
             return _.isNumber(this._limit);
         }
 
-        public condition(condition: Condition): Query {
+        public condition(condition: Condition): Query<T> {
 
             this._conditions.push(condition);
             return this;
         }
 
-        public addManyConditions(conditions: Condition[]): Query {
+        public addManyConditions(conditions: Condition[]): Query<T> {
 
             this._conditions = this._conditions.concat(conditions);
             return this;
@@ -129,13 +130,13 @@ module TSCore.App.Data.Query {
             return !!(this._conditions.length > 0);
         }
 
-        public sorter(sorter: Sorter): Query {
+        public sorter(sorter: Sorter): Query<T> {
 
             this._sorters.push(sorter);
             return this;
         }
 
-        public addManySorters(sorters: Sorter[]): Query {
+        public addManySorters(sorters: Sorter[]): Query<T> {
 
             this._sorters = this._sorters.concat(sorters);
             return this;
@@ -151,7 +152,29 @@ module TSCore.App.Data.Query {
             return (this._sorters.length > 0);
         }
 
-        public find(id: any): Query {
+        public include(include: string): Query<T> {
+
+            this._includes.push(include);
+            return this;
+        }
+
+        public addManyIncludes(includes: string[]): Query<T> {
+
+            this._includes = this._includes.concat(includes);
+            return this;
+        }
+
+        public getIncludes(): string[] {
+
+            return this._includes;
+        }
+
+        public hasIncludes(): boolean {
+
+            return (this._includes.length > 0);
+        }
+
+        public find(id: any): Query<T> {
 
             this._find = id;
             return this;
@@ -167,7 +190,7 @@ module TSCore.App.Data.Query {
             return !!this._find;
         }
 
-        public execute(): ng.IPromise<any> {
+        public execute(): ng.IPromise<IDataServiceResponse<T>> {
 
             if(!this.hasExecutor()) {
                 throw 'Unable to execute query, no executor set';
@@ -176,7 +199,7 @@ module TSCore.App.Data.Query {
             return this._executor.execute(this);
         }
 
-        public merge(query: Query): Query {
+        public merge(query: Query<T>): Query<T> {
 
             if (query.hasFrom()) {
                 this.from(query.getFrom());
@@ -200,6 +223,10 @@ module TSCore.App.Data.Query {
 
             if (query.hasSorters()) {
                 this.addManySorters(query.getSorters());
+            }
+
+            if (query.hasIncludes()) {
+                this.addManyIncludes(query.getIncludes());
             }
 
             if (query.hasFind()) {

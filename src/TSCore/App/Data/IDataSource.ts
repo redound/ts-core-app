@@ -11,12 +11,12 @@ module TSCore.App.Data {
         setDataService(dataService: Service);
         getDataService(): Service
 
-        execute(query: Query): ng.IPromise<IDataSourceResponse>;
+        execute(query: Query<any>): ng.IPromise<IDataSourceResponse>;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
 
-        notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void>;
+        notifyExecute(query: Query<any>, response: IDataSourceResponse): ng.IPromise<void>;
         notifyCreate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;

@@ -6,8 +6,13 @@ module TSCore.App.Data {
     import Reference = TSCore.App.Data.Graph.Reference;
     import Graph = TSCore.App.Data.Graph.Graph;
 
+    export interface IDataSourceResponseMeta {
+        total?: number
+    }
+
     export interface IDataSourceResponse {
-        data: Graph,
-        results: Reference[]
+        meta: IDataSourceResponseMeta,
+        graph: Graph,
+        references: Reference[]
     }
 }

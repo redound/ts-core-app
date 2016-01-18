@@ -126,12 +126,21 @@ var TSCore;
                 RequestOptions.prototype.getOptions = function () {
                     return this._options;
                 };
+                RequestOptions.prototype.param = function (name, value) {
+                    this._params = this._params || {};
+                    this._params[name] = value;
+                    return this;
+                };
+                RequestOptions.prototype.getParams = function () {
+                    return this._params;
+                };
                 RequestOptions.prototype.getRequestConfig = function () {
                     return _.extend({
                         headers: this.getHeaders(),
                         method: this.getMethod(),
                         url: this.getUrl(),
-                        data: this.getData()
+                        data: this.getData(),
+                        params: this.getParams()
                     }, this.getOptions());
                 };
                 RequestOptions.factory = function () {
@@ -341,6 +350,9 @@ var TSCore;
                     Graph.prototype.getItems = function (resourceName) {
                         return this.get([resourceName]);
                     };
+                    Graph.prototype.countItems = function (resourceName) {
+                        return this.getItems(resourceName).length;
+                    };
                     Graph.prototype.removeItems = function (resourceName) {
                         this.unset([resourceName]);
                     };
@@ -530,6 +542,7 @@ var TSCore;
                         this._fields = [];
                         this._conditions = [];
                         this._sorters = [];
+                        this._includes = [];
                         this._executor = executor;
                     }
                     Query.prototype.executor = function (executor) {
@@ -614,6 +627,20 @@ var TSCore;
                     Query.prototype.hasSorters = function () {
                         return (this._sorters.length > 0);
                     };
+                    Query.prototype.include = function (include) {
+                        this._includes.push(include);
+                        return this;
+                    };
+                    Query.prototype.addManyIncludes = function (includes) {
+                        this._includes = this._includes.concat(includes);
+                        return this;
+                    };
+                    Query.prototype.getIncludes = function () {
+                        return this._includes;
+                    };
+                    Query.prototype.hasIncludes = function () {
+                        return (this._includes.length > 0);
+                    };
                     Query.prototype.find = function (id) {
                         this._find = id;
                         return this;
@@ -648,6 +675,9 @@ var TSCore;
                         }
                         if (query.hasSorters()) {
                             this.addManySorters(query.getSorters());
+                        }
+                        if (query.hasIncludes()) {
+                            this.addManyIncludes(query.getIncludes());
                         }
                         if (query.hasFind()) {
                             this.find(query.getFind());
@@ -733,9 +763,6 @@ var TSCore;
                 };
                 Service.prototype.execute = function (query) {
                     var resourceName = query.getFrom();
-                    if (query.hasFind()) {
-                        return this.find(resourceName, query.getFind());
-                    }
                     return this.getRequestHandlerAsync(resourceName).then(function (requestHandler) {
                         return requestHandler.execute(query);
                     });
@@ -782,9 +809,21 @@ var TSCore;
         var Api;
         (function (Api) {
             var RequestOptions = TSCore.App.Http.RequestOptions;
+            var List = TSCore.Data.List;
+            (function (RequestHandlerFeatures) {
+                RequestHandlerFeatures[RequestHandlerFeatures["OFFSET"] = 0] = "OFFSET";
+                RequestHandlerFeatures[RequestHandlerFeatures["LIMIT"] = 1] = "LIMIT";
+                RequestHandlerFeatures[RequestHandlerFeatures["FIELDS"] = 2] = "FIELDS";
+                RequestHandlerFeatures[RequestHandlerFeatures["CONDITIONS"] = 3] = "CONDITIONS";
+                RequestHandlerFeatures[RequestHandlerFeatures["SORTERS"] = 4] = "SORTERS";
+                RequestHandlerFeatures[RequestHandlerFeatures["INCLUDES"] = 5] = "INCLUDES";
+            })(Api.RequestHandlerFeatures || (Api.RequestHandlerFeatures = {}));
+            var RequestHandlerFeatures = Api.RequestHandlerFeatures;
             var RequestHandler = (function () {
-                function RequestHandler(httpService) {
+                function RequestHandler($q, httpService) {
+                    this.$q = $q;
                     this.httpService = httpService;
+                    this._plugins = new List();
                 }
                 RequestHandler.prototype.setApiService = function (apiService) {
                     this._apiService = apiService;
@@ -804,6 +843,10 @@ var TSCore;
                 RequestHandler.prototype.getResource = function () {
                     return this._resource;
                 };
+                RequestHandler.prototype.plugin = function (plugin) {
+                    this._plugins.add(plugin);
+                    return this;
+                };
                 RequestHandler.prototype.request = function (requestOptions) {
                     var prefix = this.getResource().getPrefix();
                     var relativeUrl = requestOptions.getUrl();
@@ -811,68 +854,124 @@ var TSCore;
                     return this.httpService.request(requestOptions);
                 };
                 RequestHandler.prototype.execute = function (query) {
-                    var _this = this;
-                    return this.request(RequestOptions
-                        .get('/')).then(function (response) { return _this._transformQuery(response); });
+                    var requestOptions = RequestOptions.get('/');
+                    if (query.hasFind()) {
+                        var id = query.getFind();
+                        requestOptions = RequestOptions.get('/:id', { id: id });
+                    }
+                    var allowedFeatures = [];
+                    this._plugins.each(function (plugin) {
+                        allowedFeatures.push(plugin.execute(requestOptions, query));
+                    });
+                    allowedFeatures = _.flatten(allowedFeatures);
+                    var usedFeatures = this._getUsedFeatures(query);
+                    var forbiddenFeatures = _.difference(usedFeatures, allowedFeatures);
+                    if (forbiddenFeatures.length > 0) {
+                        return this.$q.reject();
+                    }
+                    return this.request(requestOptions);
+                };
+                RequestHandler.prototype._getUsedFeatures = function (query) {
+                    var features = [];
+                    if (query.hasOffset()) {
+                        features.push(RequestHandlerFeatures.OFFSET);
+                    }
+                    if (query.hasLimit()) {
+                        features.push(RequestHandlerFeatures.LIMIT);
+                    }
+                    if (query.hasFields()) {
+                        features.push(RequestHandlerFeatures.FIELDS);
+                    }
+                    if (query.hasConditions()) {
+                        features.push(RequestHandlerFeatures.CONDITIONS);
+                    }
+                    if (query.hasSorters()) {
+                        features.push(RequestHandlerFeatures.SORTERS);
+                    }
+                    if (query.hasIncludes()) {
+                        features.push(RequestHandlerFeatures.INCLUDES);
+                    }
+                    return features;
                 };
                 RequestHandler.prototype.all = function () {
-                    var _this = this;
                     return this.request(RequestOptions
-                        .get('/')).then(function (response) { return _this._transformAll(response); });
+                        .get('/'));
                 };
                 RequestHandler.prototype.find = function (id) {
-                    var _this = this;
                     return this.request(RequestOptions
-                        .get('/:id', { id: id })).then(function (response) { return _this._transformFind(response); });
+                        .get('/:id', { id: id }));
                 };
                 RequestHandler.prototype.create = function (data) {
-                    var _this = this;
                     return this.request(RequestOptions
                         .post('/')
-                        .data(data)).then(function (response) { return _this._transformCreate(response); });
+                        .data(data));
                 };
                 RequestHandler.prototype.update = function (id, data) {
-                    var _this = this;
                     return this.request(RequestOptions
                         .put('/:id', { id: id })
-                        .data(data)).then(function (response) { return _this._transformUpdate(response); });
+                        .data(data));
                 };
                 RequestHandler.prototype.remove = function (id) {
-                    var _this = this;
                     return this.request(RequestOptions
-                        .delete('/:id', { id: id })).then(function (response) { return _this._transformRemove(response); });
-                };
-                RequestHandler.prototype._transformQuery = function (response) {
-                    return this._transformMultiple(response);
-                };
-                RequestHandler.prototype._transformAll = function (response) {
-                    return this._transformMultiple(response);
-                };
-                RequestHandler.prototype._transformFind = function (response) {
-                    return this._transformSingle(response);
-                };
-                RequestHandler.prototype._transformCreate = function (response) {
-                    return this._transformSingle(response);
-                };
-                RequestHandler.prototype._transformUpdate = function (response) {
-                    return this._transformSingle(response);
-                };
-                RequestHandler.prototype._transformRemove = function (response) {
-                    return response;
-                };
-                RequestHandler.prototype._transformMultiple = function (response) {
-                    var transformer = this.getResource().getTransformer();
-                    var multipleKey = this.getResource().getMultipleKey();
-                    return transformer.collection(response.data[multipleKey]);
-                };
-                RequestHandler.prototype._transformSingle = function (response) {
-                    var transformer = this.getResource().getTransformer();
-                    var singleKey = this.getResource().getSingleKey();
-                    return transformer.item(response.data[singleKey]);
+                        .delete('/:id', { id: id }));
                 };
                 return RequestHandler;
             })();
             Api.RequestHandler = RequestHandler;
+        })(Api = App.Api || (App.Api = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../../Data/Query/Query.ts"/>
+///<reference path="../../Http/RequestOptions.ts"/>
+///<reference path="../RequestHandler.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Api;
+        (function (Api) {
+            var RequestHandlerPlugins;
+            (function (RequestHandlerPlugins) {
+                var LimitRequestHandlerPlugin = (function () {
+                    function LimitRequestHandlerPlugin() {
+                    }
+                    LimitRequestHandlerPlugin.prototype.execute = function (requestOptions, query) {
+                        if (query.hasLimit()) {
+                            requestOptions.param('limit', query.getLimit());
+                        }
+                        return [Api.RequestHandlerFeatures.LIMIT];
+                    };
+                    return LimitRequestHandlerPlugin;
+                })();
+                RequestHandlerPlugins.LimitRequestHandlerPlugin = LimitRequestHandlerPlugin;
+            })(RequestHandlerPlugins = Api.RequestHandlerPlugins || (Api.RequestHandlerPlugins = {}));
+        })(Api = App.Api || (App.Api = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../../Data/Query/Query.ts"/>
+///<reference path="../../Http/RequestOptions.ts"/>
+///<reference path="../RequestHandler.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Api;
+        (function (Api) {
+            var RequestHandlerPlugins;
+            (function (RequestHandlerPlugins) {
+                var OffsetRequestHandlerPlugin = (function () {
+                    function OffsetRequestHandlerPlugin() {
+                    }
+                    OffsetRequestHandlerPlugin.prototype.execute = function (requestOptions, query) {
+                        if (query.hasOffset()) {
+                            requestOptions.param('offset', query.getOffset());
+                        }
+                        return [Api.RequestHandlerFeatures.OFFSET];
+                    };
+                    return OffsetRequestHandlerPlugin;
+                })();
+                RequestHandlerPlugins.OffsetRequestHandlerPlugin = OffsetRequestHandlerPlugin;
+            })(RequestHandlerPlugins = Api.RequestHandlerPlugins || (Api.RequestHandlerPlugins = {}));
         })(Api = App.Api || (App.Api = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
@@ -1107,9 +1206,10 @@ var TSCore;
                         if (!this.isActivated()) {
                             throw new Exception('Unable to refresh ' + this.getResourceIdentifier() + ', model is not alive');
                         }
-                        return this._dataService.find(this._resourceName, this.getId()).then(function (result) {
-                            if (!_this.equals(result)) {
-                                _this.merge(result);
+                        return this._dataService.find(this._resourceName, this.getId()).then(function (response) {
+                            var model = response.data;
+                            if (model instanceof Model && !_this.equals(model)) {
+                                _this.merge(model);
                                 return true;
                             }
                             return false;
@@ -1158,6 +1258,7 @@ var TSCore;
         var Data;
         (function (Data) {
             var List = TSCore.Data.List;
+            var ModelList = TSCore.Data.ModelList;
             var Query = TSCore.App.Data.Query.Query;
             var ActiveModel = TSCore.App.Data.Model.ActiveModel;
             var Service = (function () {
@@ -1214,8 +1315,11 @@ var TSCore;
                 };
                 Service.prototype.find = function (resourceName, resourceId) {
                     return this.execute(this.query(resourceName)
-                        .find(resourceId)).then(function (results) {
-                        return results.length > 0 ? results[0] : null;
+                        .find(resourceId)).then(function (response) {
+                        return {
+                            response: response.response,
+                            data: response.data.first()
+                        };
                     });
                 };
                 Service.prototype.execute = function (query) {
@@ -1235,37 +1339,41 @@ var TSCore;
                         });
                     })
                         .then(function () {
-                        return _this._createModels(response);
+                        return {
+                            response: response,
+                            data: _this._createModels(response)
+                        };
                     });
                 };
                 Service.prototype._createModels = function (response) {
                     var _this = this;
-                    var data = response.data;
-                    var results = response.results;
-                    var models = [];
-                    _.each(results, function (result) {
-                        var resolveModel = data.get(result.value, function (resourceName, item) {
+                    var graph = response.graph;
+                    var references = response.references;
+                    var models = new ModelList();
+                    _.each(references, function (reference) {
+                        var resolveModel = graph.get(reference.value, function (resourceName, item) {
                             var resource = _this.getResource(resourceName);
                             var modelClass = resource.getModel();
                             var model = new modelClass(item);
                             if (model instanceof ActiveModel) {
                                 model.activate(_this, resourceName);
-                                model.setSavedData(data);
+                                model.setSavedData(graph);
                             }
                             return model;
                         });
                         if (resolveModel) {
-                            models.push(resolveModel);
+                            models.add(resolveModel);
                         }
                     });
                     return models;
                 };
                 Service.prototype.create = function (resourceName, data) {
                     var _this = this;
-                    return this
-                        ._executeCreate(resourceName, data)
-                        .then(function (response) {
-                        return _this._createModels(response)[0] || null;
+                    return this._executeCreate(resourceName, data).then(function (response) {
+                        return {
+                            response: response,
+                            data: _this._createModels(response)[0] || null
+                        };
                     });
                 };
                 Service.prototype.createModel = function (resourceName, model, data) {
@@ -1273,14 +1381,15 @@ var TSCore;
                     if (data) {
                         model.assignAll(data);
                     }
-                    return this
-                        ._executeCreate(resourceName, model.toObject(true))
-                        .then(function (response) {
-                        model = Service._updateModel(model, response.results);
+                    return this._executeCreate(resourceName, model.toObject(true)).then(function (response) {
+                        model = Service._updateModel(model, response.references);
                         if (model instanceof ActiveModel) {
                             model.activate(_this, resourceName);
                         }
-                        return model;
+                        return {
+                            response: response,
+                            data: model
+                        };
                     });
                 };
                 Service.prototype._executeCreate = function (resourceName, data) {
@@ -1306,8 +1415,11 @@ var TSCore;
                 };
                 Service.prototype.update = function (resourceName, resourceId, data) {
                     var _this = this;
-                    return this._executeUpdate(resourceName, resourceId, data).then(function (results) {
-                        return _this._createModels(results)[0] || null;
+                    return this._executeUpdate(resourceName, resourceId, data).then(function (response) {
+                        return {
+                            response: response,
+                            data: _this._createModels(response)[0] || null
+                        };
                     });
                 };
                 Service.prototype.updateModel = function (resourceName, model, data) {
@@ -1529,8 +1641,9 @@ var TSCore;
         (function (Data) {
             var DataSources;
             (function (DataSources) {
-                var Builder = TSCore.App.Data.Graph.Builder;
                 var Reference = TSCore.App.Data.Graph.Reference;
+                var Graph = TSCore.App.Data.Graph.Graph;
+                var Exception = TSCore.Exception.Exception;
                 var ApiDataSource = (function () {
                     function ApiDataSource($q, apiService, logger) {
                         this.$q = $q;
@@ -1599,27 +1712,64 @@ var TSCore;
                             .then(function (resource) { return _this._createDataSourceResponse(resourceName, resource, response); });
                     };
                     ApiDataSource.prototype._createDataSourceResponse = function (resourceName, resource, response) {
-                        var _this = this;
-                        var builder = new Builder;
-                        builder.resourceForResourceName(function (name) { return _this._resourceForResourceName(name); });
-                        builder.resourceNameForAlias(function (key) { return _this._resourceNameForAlias(key); });
-                        var graph = builder.build(response, resourceName);
-                        var results = graph.getItems(resourceName);
-                        var primaryKey = resource.getModel().primaryKey();
-                        results = _.map(results, function (resource, resourceId) {
-                            return new Reference(resourceName, resource[primaryKey]);
-                        });
+                        var total = response.data.total;
+                        var data = response.data.data;
+                        var included = response.data.included;
+                        var dataGraph = this._createGraph(data);
+                        var includedGraph = this._createGraph(included);
+                        dataGraph.merge(includedGraph);
+                        var meta = {};
+                        if (total) {
+                            meta.total = total;
+                        }
                         return {
-                            data: graph,
-                            results: results
+                            meta: meta,
+                            graph: dataGraph,
+                            references: dataGraph.getReferences(resourceName)
                         };
                     };
-                    ApiDataSource.prototype._resourceForResourceName = function (name) {
-                        return this.getDataService().getResource(name);
+                    ApiDataSource.prototype._createGraph = function (data) {
+                        var _this = this;
+                        var graph = new Graph();
+                        this._extractResource(data, function (resourceName, resourceId, attributes, relationships) {
+                            var resource = _this.getDataService().getResource(resourceName);
+                            if (!resource) {
+                                throw new Exception('Resource `' + resourceName + '` could not be found!');
+                            }
+                            var transformer = resource.getTransformer();
+                            var model = resource.getModel();
+                            var primaryKey = model.primaryKey();
+                            attributes[primaryKey] = resourceId;
+                            var item = transformer.item(attributes);
+                            _.each(relationships, function (relationship, propertyName) {
+                                if (_.isArray(relationship.data)) {
+                                    item[propertyName] = _.map(relationship.data, function (ref) {
+                                        var resourceName = ref.type;
+                                        var resourceId = ref.id;
+                                        return new Reference(resourceName, resourceId);
+                                    });
+                                    return;
+                                }
+                                if (_.isObject(relationship.data)) {
+                                    var ref = relationship.data;
+                                    var resourceName = ref.type;
+                                    var resourceId = ref.id;
+                                    item[propertyName] = new Reference(resourceName, resourceId);
+                                    return;
+                                }
+                                item[propertyName] = relationship.data;
+                            });
+                            graph.setItem(resourceName, resourceId, item);
+                        });
+                        return graph;
                     };
-                    ApiDataSource.prototype._resourceNameForAlias = function (key) {
-                        var aliases = this._getResourcesAliasMap();
-                        return aliases.get(key);
+                    ApiDataSource.prototype._extractResource = function (results, callback) {
+                        if (_.isArray(results)) {
+                            _.each(results, function (result) { return callback(result.type, result.id, result.attributes, result.relationships); });
+                        }
+                        else if (_.isObject(results)) {
+                            callback(results.type, results.id, results.attributes, results.relationships);
+                        }
                     };
                     ApiDataSource.prototype._getResourcesAliasMap = function () {
                         var _this = this;
@@ -1653,13 +1803,18 @@ var TSCore;
             var DataSources;
             (function (DataSources) {
                 var Graph = TSCore.App.Data.Graph.Graph;
-                var Reference = TSCore.App.Data.Graph.Reference;
+                var DynamicList = TSCore.Data.DynamicList;
+                (function (ResourceFlag) {
+                    ResourceFlag[ResourceFlag["DATA_COMPLETE"] = 0] = "DATA_COMPLETE";
+                })(DataSources.ResourceFlag || (DataSources.ResourceFlag = {}));
+                var ResourceFlag = DataSources.ResourceFlag;
                 var MemoryDataSource = (function () {
                     function MemoryDataSource($q, logger) {
                         this.$q = $q;
                         this.logger = logger;
                         this._graph = new Graph;
                         this._queryResultMap = new TSCore.Data.Dictionary();
+                        this._resourceFlags = new TSCore.Data.Dictionary();
                         this.logger = (this.logger || new TSCore.Logger.Logger()).child('MemoryDataSource');
                     }
                     MemoryDataSource.prototype.setDataService = function (service) {
@@ -1670,34 +1825,36 @@ var TSCore;
                     };
                     MemoryDataSource.prototype.execute = function (query) {
                         this.logger.info('execute');
-                        if (query.hasFind()) {
-                            var resourceName = query.getFrom();
-                            var resourceId = query.getFind();
-                            if (this._graph.hasItem(resourceName, resourceId)) {
-                                var references = [new Reference(resourceName, resourceId)];
-                                var response = {
-                                    data: this._graph.getGraphForReferences(references),
-                                    results: references
-                                };
-                                this.logger.info('resolve', response);
-                                return this.$q.when(response);
-                            }
-                            else {
-                                return this.$q.reject();
-                            }
-                        }
                         var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
                         var queryResult = this._queryResultMap.get(serializedQuery);
                         if (queryResult) {
+                            if (this._resourceHasFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE)) {
+                                var response = this._executeOnGraph(query);
+                                if (response) {
+                                    return this.$q.when(response);
+                                }
+                                return this.$q.reject();
+                            }
+                            var referenceList = queryResult.references;
+                            var offset = query.getOffset();
+                            var limit = query.getLimit();
+                            if (!referenceList.containsRange(offset, limit)) {
+                                return this.$q.reject();
+                            }
+                            var references = referenceList.getRange(offset, limit);
                             this.logger.info('resolve cached results');
                             var response = {
-                                data: this._graph.getGraphForReferences(queryResult.references),
-                                results: _.clone(queryResult.references)
+                                meta: queryResult.meta,
+                                graph: this._graph.getGraphForReferences(references),
+                                references: _.clone(references)
                             };
                             this.logger.info('resolve', response);
                             return this.$q.when(response);
                         }
                         return this.$q.reject();
+                    };
+                    MemoryDataSource.prototype._executeOnGraph = function (query) {
+                        return null;
                     };
                     MemoryDataSource.prototype.create = function (resourceName, data) {
                         this.logger.info('create');
@@ -1713,13 +1870,41 @@ var TSCore;
                     };
                     MemoryDataSource.prototype.notifyExecute = function (query, response) {
                         this.logger.info('notifyExecute - query ', query, ' - response', response);
+                        this._graph.merge(response.graph);
                         var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
-                        this._graph.merge(response.data);
-                        this._queryResultMap.set(serializedQuery, {
-                            query: _.clone(query),
-                            references: _.clone(response.results)
-                        });
+                        var references = _.clone(response.references);
+                        var offset = query.getOffset() || 0;
+                        if ((response.meta.total && this._graph.countItems(query.getFrom()) === response.meta.total) || (!query.hasOffset() && !query.hasLimit())) {
+                            this._setResourceFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE);
+                        }
+                        var queryResult = this._queryResultMap.get(serializedQuery);
+                        if (!queryResult) {
+                            queryResult = {
+                                meta: response.meta,
+                                query: _.clone(query),
+                                references: new DynamicList()
+                            };
+                        }
+                        queryResult.references.setRange(offset, references);
+                        console.log('update queryResult', queryResult);
+                        this._queryResultMap.set(serializedQuery, queryResult);
                         return this.$q.when();
+                    };
+                    MemoryDataSource.prototype._resourceHasFlag = function (resourceName, flag) {
+                        var flags = this._resourceFlags.get(resourceName);
+                        if (!flags) {
+                            return false;
+                        }
+                        return flags.contains(flag);
+                    };
+                    MemoryDataSource.prototype._setResourceFlag = function (resourceName, flag) {
+                        console.log('resourceName', resourceName, 'flag', flag);
+                        var flags = this._resourceFlags.get(resourceName);
+                        if (!flags) {
+                            flags = new TSCore.Data.Collection();
+                            this._resourceFlags.set(resourceName, flags);
+                        }
+                        flags.add(flag);
                     };
                     MemoryDataSource.prototype.notifyCreate = function (response) {
                         this.logger.info('notifyCreate - response', response);
@@ -2025,6 +2210,8 @@ var TSCore;
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="TSCore/App/Api/IResource.ts" />
 /// <reference path="TSCore/App/Api/RequestHandler.ts" />
+/// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
+/// <reference path="TSCore/App/Api/RequestHandlerPlugins/OffsetRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/Service.ts" />
 /// <reference path="TSCore/App/App.ts" />
 /// <reference path="TSCore/App/Auth/AccountType.ts" />

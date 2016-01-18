@@ -5,6 +5,7 @@ module TSCore.App.Api {
 
     import Query = TSCore.App.Data.Query.Query;
     import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    import Model = TSCore.Data.Model;
 
     export class Service implements IQueryExecutor
     {
@@ -73,13 +74,9 @@ module TSCore.App.Api {
         }
 
 
-        public execute(query: Query): ng.IPromise<any> {
+        public execute(query: Query<any>): ng.IPromise<any> {
 
             var resourceName = query.getFrom();
-
-            if (query.hasFind()) {
-                return this.find(resourceName, query.getFind());
-            }
 
             return this.getRequestHandlerAsync(resourceName).then(requestHandler => {
                 return requestHandler.execute(query);

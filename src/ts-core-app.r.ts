@@ -4,6 +4,8 @@
 //grunt-start
 /// <reference path="TSCore/App/Api/IResource.ts" />
 /// <reference path="TSCore/App/Api/RequestHandler.ts" />
+/// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
+/// <reference path="TSCore/App/Api/RequestHandlerPlugins/OffsetRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/Service.ts" />
 /// <reference path="TSCore/App/App.ts" />
 /// <reference path="TSCore/App/Auth/AccountType.ts" />

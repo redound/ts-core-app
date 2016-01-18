@@ -13,6 +13,8 @@ module TSCore.App.Data.DataSources {
     import Builder = TSCore.App.Data.Graph.Builder;
     import Reference = TSCore.App.Data.Graph.Reference;
     import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    import Graph = TSCore.App.Data.Graph.Graph;
+    import Exception = TSCore.Exception.Exception;
 
     export class ApiDataSource implements IDataSource, IQueryExecutor
     {
@@ -37,7 +39,7 @@ module TSCore.App.Data.DataSources {
             return this._dataService;
         }
 
-        public execute(query: Query): ng.IPromise<IDataSourceResponse> {
+        public execute(query: Query<any>): ng.IPromise<IDataSourceResponse> {
 
             this.logger.info('execute');
 
@@ -75,7 +77,7 @@ module TSCore.App.Data.DataSources {
                 .then(response => this._transformResponse(resourceName, response));
         }
 
-        public notifyExecute(query: Query, response: IDataSourceResponse): ng.IPromise<void> {
+        public notifyExecute(query: Query<any>, response: IDataSourceResponse): ng.IPromise<void> {
 
             this.logger.info('notifyExecute - query ', query, ' - response', response);
 
@@ -118,35 +120,94 @@ module TSCore.App.Data.DataSources {
 
         protected _createDataSourceResponse(resourceName, resource, response) {
 
-            var builder = new Builder;
+            var total = response.data.total;
+            var data = response.data.data;
+            var included = response.data.included;
 
-            builder.resourceForResourceName(name => this._resourceForResourceName(name));
-            builder.resourceNameForAlias(key => this._resourceNameForAlias(key));
+            var dataGraph = this._createGraph(data);
+            var includedGraph = this._createGraph(included);
 
-            var graph = builder.build(response, resourceName);
+            dataGraph.merge(includedGraph);
 
-            var results = graph.getItems(resourceName);
+            var meta:any = {};
 
-            var primaryKey = resource.getModel().primaryKey();
-
-            results = _.map(results, (resource: any, resourceId: any) => {
-                return new Reference(resourceName, resource[primaryKey]);
-            });
+            if (total) {
+                meta.total = total;
+            }
 
             return {
-                data: graph,
-                results: results
+                meta: meta,
+                graph: dataGraph,
+                references: dataGraph.getReferences(resourceName)
             };
         }
 
-        protected _resourceForResourceName(name: string) {
-            return this.getDataService().getResource(name);
+        protected _createGraph(data): Graph {
+
+            var graph = new Graph();
+
+            this._extractResource(data, (resourceName: string, resourceId: number, attributes: any, relationships: any) => {
+
+                var resource = this.getDataService().getResource(resourceName);
+
+                if (!resource) {
+                    throw new Exception('Resource `' + resourceName + '` could not be found!');
+                }
+
+                var transformer = resource.getTransformer();
+                var model = resource.getModel();
+                var primaryKey = model.primaryKey();
+
+                attributes[primaryKey] = resourceId;
+
+                var item = transformer.item(attributes);
+
+                _.each(relationships, (relationship: any, propertyName: string) => {
+
+                    if (_.isArray(relationship.data)) {
+
+                        item[propertyName] = _.map(relationship.data, (ref:any) => {
+
+                            var resourceName = ref.type;
+                            var resourceId = ref.id;
+
+                            return new Reference(resourceName, resourceId);
+                        });
+
+                        return;
+                    }
+
+                    if (_.isObject(relationship.data)) {
+
+                        var ref = relationship.data;
+                        var resourceName = ref.type;
+                        var resourceId = ref.id;
+
+                        item[propertyName] = new Reference(resourceName, resourceId);
+
+                        return;
+                    }
+
+                    item[propertyName] = relationship.data;
+                });
+
+                graph.setItem(resourceName, resourceId, item);
+            });
+
+            return graph;
         }
 
-        protected _resourceNameForAlias(key: string) {
+        protected _extractResource(results, callback) {
 
-            var aliases = this._getResourcesAliasMap();
-            return aliases.get(key);
+            if (_.isArray(results)) {
+
+                _.each(results, (result: any) => callback(result.type, result.id, result.attributes, result.relationships));
+
+            } else if (_.isObject(results)) {
+
+                callback(results.type, results.id, results.attributes, results.relationships);
+
+            }
         }
 
         protected _getResourcesAliasMap() {

@@ -3,6 +3,7 @@ module TSCore.App.Data {
     import Model = TSCore.Data.Model;
     import Query = TSCore.App.Data.Query.Query;
     import IModel = TSCore.Data.IModel;
+    import ModelList = TSCore.Data.ModelList;
 
     export class ResourceDelegate<T extends Model> {
 
@@ -15,27 +16,27 @@ module TSCore.App.Data {
             this._resourceName = resourceName;
         }
 
-        public query(): Query {
+        public query(): Query<ModelList<T>> {
             return this._dataService.query(this._resourceName);
         }
 
-        public all(): ng.IPromise<T[]> {
+        public all(): ng.IPromise<IDataServiceResponse<ModelList<T>>> {
             return this._dataService.all(this._resourceName);
         }
 
-        public find(resourceId: any): ng.IPromise<T> {
+        public find(resourceId: any): ng.IPromise<IDataServiceResponse<T>> {
             return this._dataService.find(this._resourceName, resourceId);
         }
 
-        public create(data: any): ng.IPromise<T> {
+        public create(data: any): ng.IPromise<IDataServiceResponse<T>> {
             return this._dataService.create(this._resourceName, data);
         }
 
-        public createModel(model: T, data?: any): ng.IPromise<T> {
+        public createModel(model: T, data?: any): ng.IPromise<IDataServiceResponse<T>> {
             return this._dataService.createModel(this._resourceName, model, data);
         }
 
-        public update(resourceId: any, data: any): ng.IPromise<T> {
+        public update(resourceId: any, data: any): ng.IPromise<IDataServiceResponse<T>> {
             return this._dataService.update(this._resourceName, resourceId, data);
         }
 

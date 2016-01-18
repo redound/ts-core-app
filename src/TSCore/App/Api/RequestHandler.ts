@@ -5,18 +5,36 @@
 
 module TSCore.App.Api {
 
-    import RequestOptions = TSCore.App.Http.RequestOptions;
     import Query = TSCore.App.Data.Query.Query;
     import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
+    import RequestOptions = TSCore.App.Http.RequestOptions;
+    import List = TSCore.Data.List;
+    import Model = TSCore.Data.Model;
+
+    export enum RequestHandlerFeatures {
+        OFFSET,
+        LIMIT,
+        FIELDS,
+        CONDITIONS,
+        SORTERS,
+        INCLUDES
+    }
+
+    export interface IRequestHandlerPlugin {
+        execute(requestOptions: RequestOptions, query: Query<any>): RequestHandlerFeatures|RequestHandlerFeatures[]
+    }
 
     export class RequestHandler implements IQueryExecutor {
 
         public _apiService: Service;
         public _resourceName: string;
         public _resource: IResource;
+        public _plugins: List<IRequestHandlerPlugin> = new List<IRequestHandlerPlugin>();
 
-        public constructor(protected httpService: TSCore.App.Http.Service) {
-
+        public constructor(
+            protected $q: ng.IQService,
+            protected httpService: TSCore.App.Http.Service
+        ) {
         }
 
         public setApiService(apiService: Service) {
@@ -43,6 +61,11 @@ module TSCore.App.Api {
             return this._resource;
         }
 
+        public plugin(plugin: IRequestHandlerPlugin): RequestHandler {
+            this._plugins.add(plugin);
+            return this;
+        }
+
         public request(requestOptions: RequestOptions): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             var prefix = this.getResource().getPrefix();
@@ -53,37 +76,91 @@ module TSCore.App.Api {
             return this.httpService.request(requestOptions);
         }
 
-        public execute(query: Query): ng.IPromise<any> {
+        public execute(query: Query<any>):  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
+
+            var requestOptions = RequestOptions.get('/');
+
+            if (query.hasFind()) {
+
+                var id = query.getFind();
+
+                requestOptions = RequestOptions.get('/:id', { id: id });
+            }
+
+            var allowedFeatures = [];
+
+            this._plugins.each(plugin => {
+
+                allowedFeatures.push(
+                    plugin.execute(requestOptions, query)
+                );
+            });
+
+            allowedFeatures = _.flatten(allowedFeatures);
+
+            var usedFeatures = this._getUsedFeatures(query);
+
+            var forbiddenFeatures = _.difference(usedFeatures, allowedFeatures);
+
+            if (forbiddenFeatures.length > 0) {
+                return this.$q.reject();
+            }
+
+            return this.request(requestOptions);
+        }
+
+        protected _getUsedFeatures(query: Query<any>): RequestHandlerFeatures[] {
+
+            var features = [];
+
+            if (query.hasOffset()) {
+                features.push(RequestHandlerFeatures.OFFSET);
+            }
+
+            if (query.hasLimit()) {
+                features.push(RequestHandlerFeatures.LIMIT);
+            }
+
+            if (query.hasFields()) {
+                features.push(RequestHandlerFeatures.FIELDS);
+            }
+
+            if (query.hasConditions()) {
+                features.push(RequestHandlerFeatures.CONDITIONS);
+            }
+
+            if (query.hasSorters()) {
+                features.push(RequestHandlerFeatures.SORTERS);
+            }
+
+            if (query.hasIncludes()) {
+                features.push(RequestHandlerFeatures.INCLUDES);
+            }
+
+            return features;
+        }
+
+        public all():  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             return this.request(
 
                 RequestOptions
                     .get('/')
 
-            ).then(response => this._transformQuery(response));
+            );
         }
 
-        public all(): ng.IPromise<any> {
-
-            return this.request(
-
-                RequestOptions
-                    .get('/')
-
-            ).then(response => this._transformAll(response));
-        }
-
-        public find(id: number): ng.IPromise<any> {
+        public find(id: number):  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             return this.request(
 
                 RequestOptions
                     .get('/:id', { id: id })
 
-            ).then(response => this._transformFind(response));
+            );
         }
 
-        public create(data: {}): ng.IPromise<any> {
+        public create(data: {}):  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             return this.request(
 
@@ -91,10 +168,10 @@ module TSCore.App.Api {
                     .post('/')
                     .data(data)
 
-            ).then(response => this._transformCreate(response));
+            );
         }
 
-        public update(id: number, data: {}): ng.IPromise<any> {
+        public update(id: number, data: {}):  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             return this.request(
 
@@ -102,63 +179,17 @@ module TSCore.App.Api {
                     .put('/:id', { id: id })
                     .data(data)
 
-            ).then(response => this._transformUpdate(response));
+            );
         }
 
-        public remove(id: number): ng.IPromise<any> {
+        public remove(id: number):  ng.IPromise<ng.IHttpPromiseCallbackArg<{}>> {
 
             return this.request(
 
                 RequestOptions
                     .delete('/:id', { id: id })
 
-            ).then(response => this._transformRemove(response));
-        }
-
-        protected _transformQuery(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return this._transformMultiple(response);
-        }
-
-        protected _transformAll(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return this._transformMultiple(response);
-        }
-
-        protected _transformFind(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return this._transformSingle(response);
-        }
-
-        protected _transformCreate(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return this._transformSingle(response);
-        }
-
-        protected _transformUpdate(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return this._transformSingle(response);
-        }
-
-        protected _transformRemove(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            return response;
-        }
-
-        protected _transformMultiple(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            var transformer = this.getResource().getTransformer();
-            var multipleKey = this.getResource().getMultipleKey();
-
-            return transformer.collection(response.data[multipleKey]);
-        }
-
-        protected _transformSingle(response: ng.IHttpPromiseCallbackArg<{}>): any {
-
-            var transformer = this.getResource().getTransformer();
-            var singleKey = this.getResource().getSingleKey();
-
-            return transformer.item(response.data[singleKey]);
+            );
         }
     }
 }
