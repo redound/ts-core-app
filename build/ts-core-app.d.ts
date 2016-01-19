@@ -505,7 +505,7 @@ declare module TSCore.App.Data.DataSources {
     interface IQueryResult {
         query: Query<any>;
         references: DynamicList<Reference>;
-        meta: IDataSourceResponseMeta;
+        meta: {};
     }
     enum ResourceFlag {
         DATA_COMPLETE = 0,
@@ -522,7 +522,6 @@ declare module TSCore.App.Data.DataSources {
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query<any>): ng.IPromise<IDataSourceResponse>;
-        protected _executeOnGraph(query: Query<any>): IDataSourceResponse;
         create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;

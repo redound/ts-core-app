@@ -15,7 +15,7 @@ module TSCore.App.Data.DataSources {
     export interface IQueryResult {
         query: Query<any>,
         references: DynamicList<Reference>,
-        meta: IDataSourceResponseMeta
+        meta: {}
     }
 
     export enum ResourceFlag {
@@ -50,22 +50,40 @@ module TSCore.App.Data.DataSources {
         {
             this.logger.info('execute');
 
+            if (query.hasFind()) {
+
+                var resourceName = query.getFrom();
+                var resourceId = query.getFind();
+
+                if (this._graph.hasItem(resourceName, resourceId)) {
+
+                    var references = [new Reference(resourceName, resourceId)];
+
+                    var response = {
+                        meta: {},
+                        graph: this._graph.getGraphForReferences(references),
+                        references: references
+                    };
+
+                    this.logger.info('resolve', response);
+
+                    return this.$q.when(response);
+
+                } else {
+                    return this.$q.reject();
+                }
+            }
+
             var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
 
             var queryResult = this._queryResultMap.get(serializedQuery);
 
             if (queryResult) {
 
-                if (this._resourceHasFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE)) {
-
-                    var response = this._executeOnGraph(query);
-
-                    if (response) {
-                        return this.$q.when(response);
-                    }
-
-                    return this.$q.reject();
-                }
+                // TODO: Implement
+                //if (this._resourceHasFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE)) {
+                //
+                //}
 
                 var referenceList = queryResult.references;
                 var offset = query.getOffset();
@@ -93,11 +111,6 @@ module TSCore.App.Data.DataSources {
 
             // TODO
             return this.$q.reject();
-        }
-
-        protected _executeOnGraph(query: Query<any>): IDataSourceResponse {
-
-            return null;
         }
 
         public create(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>

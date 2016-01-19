@@ -1803,6 +1803,7 @@ var TSCore;
             var DataSources;
             (function (DataSources) {
                 var Graph = TSCore.App.Data.Graph.Graph;
+                var Reference = TSCore.App.Data.Graph.Reference;
                 var DynamicList = TSCore.Data.DynamicList;
                 (function (ResourceFlag) {
                     ResourceFlag[ResourceFlag["DATA_COMPLETE"] = 0] = "DATA_COMPLETE";
@@ -1825,16 +1826,26 @@ var TSCore;
                     };
                     MemoryDataSource.prototype.execute = function (query) {
                         this.logger.info('execute');
+                        if (query.hasFind()) {
+                            var resourceName = query.getFrom();
+                            var resourceId = query.getFind();
+                            if (this._graph.hasItem(resourceName, resourceId)) {
+                                var references = [new Reference(resourceName, resourceId)];
+                                var response = {
+                                    meta: {},
+                                    graph: this._graph.getGraphForReferences(references),
+                                    references: references
+                                };
+                                this.logger.info('resolve', response);
+                                return this.$q.when(response);
+                            }
+                            else {
+                                return this.$q.reject();
+                            }
+                        }
                         var serializedQuery = query.serialize(MemoryDataSource.QUERY_SERIALIZE_FIELDS);
                         var queryResult = this._queryResultMap.get(serializedQuery);
                         if (queryResult) {
-                            if (this._resourceHasFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE)) {
-                                var response = this._executeOnGraph(query);
-                                if (response) {
-                                    return this.$q.when(response);
-                                }
-                                return this.$q.reject();
-                            }
                             var referenceList = queryResult.references;
                             var offset = query.getOffset();
                             var limit = query.getLimit();
@@ -1852,9 +1863,6 @@ var TSCore;
                             return this.$q.when(response);
                         }
                         return this.$q.reject();
-                    };
-                    MemoryDataSource.prototype._executeOnGraph = function (query) {
-                        return null;
                     };
                     MemoryDataSource.prototype.create = function (resourceName, data) {
                         this.logger.info('create');
