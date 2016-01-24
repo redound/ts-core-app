@@ -1,29 +1,4 @@
 /// <reference path="../../ts-core/build/ts-core.d.ts" />
-declare module TSCore.App.Data {
-    interface ITransformer {
-        new (): Transformer;
-        item(data: any): any;
-        collection(data: any): any;
-    }
-    class Transformer extends TSCore.BaseObject {
-        availableIncludes: any[];
-        transform(item: any): void;
-        collection(data: any): void[];
-        item(data: any): void;
-        static collection(data: any): void[];
-        static item(data: any): void;
-    }
-}
-declare module TSCore.App.Api {
-    import Transformer = TSCore.App.Data.Transformer;
-    interface IResource {
-        getPrefix(): string;
-        getTransformer(): Transformer;
-        getSingleKey(): string;
-        getMultipleKey(): string;
-        getRequestHandler(): RequestHandler;
-    }
-}
 declare module TSCore.App.Http {
     class RequestOptions {
         protected _headers: ng.IHttpRequestConfigHeaders;
@@ -255,9 +230,6 @@ declare module TSCore.App.Api {
         SORTERS = 4,
         INCLUDES = 5,
     }
-    interface IRequestHandlerPlugin {
-        execute(requestOptions: RequestOptions, query: Query<any>): RequestHandlerFeatures | RequestHandlerFeatures[];
-    }
     class RequestHandler implements IQueryExecutor {
         protected $q: ng.IQService;
         protected httpService: TSCore.App.Http.Service;
@@ -281,6 +253,38 @@ declare module TSCore.App.Api {
         create(data: {}): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
         update(id: number, data: {}): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
         remove(id: number): ng.IPromise<ng.IHttpPromiseCallbackArg<{}>>;
+    }
+}
+declare module TSCore.App.Api {
+    import Query = TSCore.App.Data.Query.Query;
+    import RequestOptions = TSCore.App.Http.RequestOptions;
+    interface IRequestHandlerPlugin {
+        execute(requestOptions: RequestOptions, query: Query<any>): RequestHandlerFeatures | RequestHandlerFeatures[];
+    }
+}
+declare module TSCore.App.Data {
+    interface ITransformer {
+        new (): Transformer;
+        item(data: any): any;
+        collection(data: any): any;
+    }
+    class Transformer extends TSCore.BaseObject {
+        availableIncludes: any[];
+        transform(item: any): void;
+        collection(data: any): void[];
+        item(data: any): void;
+        static collection(data: any): void[];
+        static item(data: any): void;
+    }
+}
+declare module TSCore.App.Api {
+    import Transformer = TSCore.App.Data.Transformer;
+    interface IResource {
+        getPrefix(): string;
+        getTransformer(): Transformer;
+        getSingleKey(): string;
+        getMultipleKey(): string;
+        getRequestHandler(): RequestHandler;
     }
 }
 declare module TSCore.App.Api.RequestHandlerPlugins {
@@ -424,24 +428,24 @@ declare module TSCore.App.Data {
         getResource(name: string): IResource;
         getResourceAsync(name: string): ng.IPromise<Resource>;
         getResourceDelegate<T extends Model>(resourceName: string): ResourceDelegate<T>;
-        query(resourceName: string): Query<ModelList<Model>>;
-        all(resourceName: string): ng.IPromise<IDataServiceResponse<ModelList<Model>>>;
-        find(resourceName: string, resourceId: any): ng.IPromise<IDataServiceResponse<Model>>;
-        execute(query: Query<ModelList<Model>>): ng.IPromise<IDataServiceResponse<ModelList<Model>>>;
-        protected _createModels(response: IDataSourceResponse): ModelList<Model>;
-        create(resourceName: string, data: any): ng.IPromise<IDataServiceResponse<Model>>;
-        createModel(resourceName: string, model: Model, data?: any): ng.IPromise<IDataServiceResponse<Model>>;
+        query(resourceName: string): Query<ModelList<any>>;
+        all(resourceName: string): ng.IPromise<IDataServiceResponse<ModelList<any>>>;
+        find(resourceName: string, resourceId: any): ng.IPromise<IDataServiceResponse<any>>;
+        execute(query: Query<ModelList<any>>): ng.IPromise<IDataServiceResponse<ModelList<any>>>;
+        protected _createModels(response: IDataSourceResponse): ModelList<any>;
+        create(resourceName: string, data: any): ng.IPromise<IDataServiceResponse<any>>;
+        createModel(resourceName: string, model: any, data?: any): ng.IPromise<IDataServiceResponse<any>>;
         protected _executeCreate(resourceName: string, data: any): ng.IPromise<IDataSourceResponse>;
         update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataServiceResponse<Model>>;
-        updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void>;
+        updateModel(resourceName: string, model: any, data?: any): ng.IPromise<void>;
         protected _executeUpdate(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse>;
         remove(resourceName: string, resourceId: any): ng.IPromise<void>;
         removeModel(resourceName: string, model: Model): ng.IPromise<void>;
         protected _executeRemove(resourceName: string, resourceId: any): ng.IPromise<IDataSourceResponse>;
         protected _notifySources(startIndex: number, executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<any>;
         protected _executeSources(executor: (source: IDataSource) => ng.IPromise<any>): ng.IPromise<IDataSourceExecutionResult>;
-        protected static _updateModel(model: any, data: any): Model;
-        protected static _removeModel(model: any): Model;
+        protected static _updateModel(model: any, data: any): any;
+        protected static _removeModel(model: any): any;
     }
 }
 declare module TSCore.App.Data.Graph {
@@ -575,76 +579,6 @@ declare module TSCore.App.Http {
         unsetDefaultHeader(name: any): void;
         request(requestOptions: RequestOptions): ng.IHttpPromise<any>;
         private _applyDefaults(requestOptions);
-    }
-}
-declare module TSCore.App.Interceptors {
-    module HttpInterceptorEvents {
-        const REQUEST: string;
-        const REQUEST_ERROR: string;
-        const RESPONSE: string;
-        const RESPONSE_ERROR: string;
-        const RESPONSE_500_ERRORS: string;
-        const RESPONSE_401_ERROR: string;
-        interface IErrorParams {
-            rejection: any;
-        }
-        interface IRequestParams {
-            config: any;
-        }
-        interface IResponseParams {
-            response: any;
-        }
-        interface IRequestErrorParams extends IErrorParams {
-        }
-        interface IResponseErrorParams extends IErrorParams {
-        }
-        interface IResponse500ErrorsParams extends IErrorParams {
-        }
-        interface IResponseError401 extends IErrorParams {
-        }
-    }
-    class HttpInterceptor {
-        protected $q: any;
-        static $inject: string[];
-        events: TSCore.Events.EventEmitter;
-        constructor($q: any);
-        request: (config: any) => any;
-        requestError: (rejection: any) => any;
-        response: (response: any) => any;
-        responseError: (rejection: any) => any;
-    }
-}
-declare module TSCore.App.Interceptors {
-    module StateAccessLevels {
-        const PUBLIC: string;
-        const UNAUTHORIZED: string;
-        const AUTHORIZED: string;
-    }
-    module StateInterceptorEvents {
-        const FIRST_ROUTE: string;
-        const STATE_CHANGE_START: string;
-        const ENTERING_AUTHORIZED_AREA: string;
-        const ENTERING_UNAUTHORIZED_AREA: string;
-        const ENTERING_PUBLIC_AREA: string;
-        interface IStateChangeEventParams {
-            event: any;
-            toState: any;
-            toParams: any;
-            fromState: any;
-            fromParams: any;
-        }
-    }
-    class StateInterceptor {
-        protected $rootScope: ng.IRootScopeService;
-        static $inject: string[];
-        events: TSCore.Events.EventEmitter;
-        private _firstRoute;
-        private _lastRoute;
-        constructor($rootScope: ng.IRootScopeService);
-        init(): void;
-        private _attachRouterEvents();
-        private _$stateChangeStart(event, toState, toParams, fromState, fromParams);
-        getFirstRoute(): any;
     }
 }
 declare module TSCore.App {

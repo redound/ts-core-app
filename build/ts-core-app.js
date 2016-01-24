@@ -1,59 +1,3 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
-            var Transformer = (function (_super) {
-                __extends(Transformer, _super);
-                function Transformer() {
-                    _super.apply(this, arguments);
-                    this.availableIncludes = [];
-                }
-                Transformer.prototype.transform = function (item) {
-                };
-                Transformer.prototype.collection = function (data) {
-                    var _this = this;
-                    if (!data) {
-                        return null;
-                    }
-                    return _.map(data, function (item) { return _this.item(item); });
-                };
-                Transformer.prototype.item = function (data) {
-                    var _this = this;
-                    if (!data) {
-                        return null;
-                    }
-                    var result = this.transform(data);
-                    _.each(this.availableIncludes, function (include) {
-                        var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
-                        if (result[include] && _this[includeMethod]) {
-                            result[include] = _this[includeMethod](result);
-                        }
-                    });
-                    return result;
-                };
-                Transformer.collection = function (data) {
-                    var transformer = new this;
-                    return transformer.collection(data);
-                };
-                Transformer.item = function (data) {
-                    var transformer = new this;
-                    return transformer.item(data);
-                };
-                return Transformer;
-            })(TSCore.BaseObject);
-            Data.Transformer = Transformer;
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-///<reference path="../Data/Transformer.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -406,6 +350,7 @@ var TSCore;
                         if (this._isReference(value)) {
                             return this.get(value.value, callback);
                         }
+                        console.log('resolveValueRecursive', value);
                         if (_.isArray(value)) {
                             value = _.map(value, function (subValue, subKey) {
                                 return _this._resolveValueRecursive(key, subKey, subValue, callback);
@@ -801,7 +746,8 @@ var TSCore;
 ///<reference path="../Http/RequestOptions.ts"/>
 ///<reference path="../Data/Query/Query.ts"/>
 ///<reference path="../Data/Query/IQueryExecutor.ts"/>
-///<reference path="Service.ts"/>
+///<reference path="./Service.ts"/>
+///<reference path="./IRequestHandlerPlugin.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -921,9 +867,69 @@ var TSCore;
         })(Api = App.Api || (App.Api = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
+///<reference path="./RequestHandler.ts"/>
+///<reference path="../Http/RequestOptions.ts"/>
+///<reference path="../Data/Query/Query.ts"/>
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Transformer = (function (_super) {
+                __extends(Transformer, _super);
+                function Transformer() {
+                    _super.apply(this, arguments);
+                    this.availableIncludes = [];
+                }
+                Transformer.prototype.transform = function (item) {
+                };
+                Transformer.prototype.collection = function (data) {
+                    var _this = this;
+                    if (!data) {
+                        return null;
+                    }
+                    return _.map(data, function (item) { return _this.item(item); });
+                };
+                Transformer.prototype.item = function (data) {
+                    var _this = this;
+                    if (!data) {
+                        return null;
+                    }
+                    var result = this.transform(data);
+                    _.each(this.availableIncludes, function (include) {
+                        var includeMethod = 'include' + TSCore.Utils.Text.ucFirst(include);
+                        if (result[include] && _this[includeMethod]) {
+                            result[include] = _this[includeMethod](result);
+                        }
+                    });
+                    return result;
+                };
+                Transformer.collection = function (data) {
+                    var transformer = new this;
+                    return transformer.collection(data);
+                };
+                Transformer.item = function (data) {
+                    var transformer = new this;
+                    return transformer.item(data);
+                };
+                return Transformer;
+            })(TSCore.BaseObject);
+            Data.Transformer = Transformer;
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="../Data/Transformer.ts"/>
 ///<reference path="../../Data/Query/Query.ts"/>
 ///<reference path="../../Http/RequestOptions.ts"/>
 ///<reference path="../RequestHandler.ts"/>
+///<reference path="../IRequestHandlerPlugin.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1659,7 +1665,7 @@ var TSCore;
                     };
                     ApiDataSource.prototype.execute = function (query) {
                         var _this = this;
-                        this.logger.info('execute');
+                        this.logger.info('execute', query);
                         var resourceName = query.getFrom();
                         return this.apiService
                             .execute(query)
@@ -1725,7 +1731,9 @@ var TSCore;
                         return {
                             meta: meta,
                             graph: dataGraph,
-                            references: dataGraph.getReferences(resourceName)
+                            references: _.map(data, function (item) {
+                                return new Reference(resourceName, item.id);
+                            })
                         };
                     };
                     ApiDataSource.prototype._createGraph = function (data) {
@@ -1740,7 +1748,10 @@ var TSCore;
                             var model = resource.getModel();
                             var primaryKey = model.primaryKey();
                             attributes[primaryKey] = resourceId;
-                            var item = transformer.item(attributes);
+                            var item = attributes;
+                            if (transformer) {
+                                item = transformer.item(attributes);
+                            }
                             _.each(relationships, function (relationship, propertyName) {
                                 if (_.isArray(relationship.data)) {
                                     item[propertyName] = _.map(relationship.data, function (ref) {
@@ -1826,6 +1837,7 @@ var TSCore;
                     };
                     MemoryDataSource.prototype.execute = function (query) {
                         this.logger.info('execute');
+                        return this.$q.reject();
                         if (query.hasFind()) {
                             var resourceName = query.getFrom();
                             var resourceId = query.getFind();
@@ -1883,7 +1895,6 @@ var TSCore;
                         var references = _.clone(response.references);
                         var offset = query.getOffset() || 0;
                         if ((response.meta.total && this._graph.countItems(query.getFrom()) === response.meta.total) || (!query.hasOffset() && !query.hasLimit())) {
-                            this._setResourceFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE);
                         }
                         var queryResult = this._queryResultMap.get(serializedQuery);
                         if (!queryResult) {
@@ -2024,140 +2035,6 @@ var TSCore;
         })(Http = App.Http || (App.Http = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Interceptors;
-        (function (Interceptors) {
-            var HttpInterceptorEvents;
-            (function (HttpInterceptorEvents) {
-                HttpInterceptorEvents.REQUEST = 'httpRequest';
-                HttpInterceptorEvents.REQUEST_ERROR = 'httpRequestError';
-                HttpInterceptorEvents.RESPONSE = 'httpResponse';
-                HttpInterceptorEvents.RESPONSE_ERROR = 'httpResponseError';
-                HttpInterceptorEvents.RESPONSE_500_ERRORS = 'httpResponse500Errors';
-                HttpInterceptorEvents.RESPONSE_401_ERROR = 'httpResponseError404';
-            })(HttpInterceptorEvents = Interceptors.HttpInterceptorEvents || (Interceptors.HttpInterceptorEvents = {}));
-            var HttpInterceptor = (function () {
-                function HttpInterceptor($q) {
-                    var _this = this;
-                    this.$q = $q;
-                    this.events = new TSCore.Events.EventEmitter();
-                    this.request = function (config) {
-                        _this.events.trigger(HttpInterceptorEvents.REQUEST, { config: config });
-                        return config;
-                    };
-                    this.requestError = function (rejection) {
-                        _this.events.trigger(HttpInterceptorEvents.REQUEST_ERROR, { rejection: rejection });
-                        return _this.$q.reject(rejection);
-                    };
-                    this.response = function (response) {
-                        _this.events.trigger(HttpInterceptorEvents.RESPONSE, { response: response });
-                        return response;
-                    };
-                    this.responseError = function (rejection) {
-                        _this.events.trigger(HttpInterceptorEvents.RESPONSE_ERROR, { rejection: rejection });
-                        if (rejection.status === 0 || String(rejection.status).charAt(0) === '5') {
-                            _this.events.trigger(HttpInterceptorEvents.RESPONSE_500_ERRORS, { rejection: rejection });
-                        }
-                        if (rejection.status === 401) {
-                            _this.events.trigger(HttpInterceptorEvents.RESPONSE_401_ERROR, { rejection: rejection });
-                        }
-                        return _this.$q.reject(rejection);
-                    };
-                }
-                HttpInterceptor.$inject = ['$q'];
-                return HttpInterceptor;
-            })();
-            Interceptors.HttpInterceptor = HttpInterceptor;
-        })(Interceptors = App.Interceptors || (App.Interceptors = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Interceptors;
-        (function (Interceptors) {
-            var UIRouterEvents;
-            (function (UIRouterEvents) {
-                UIRouterEvents.STATE_CHANGE_START = '$stateChangeStart';
-                UIRouterEvents.STATE_CHANGE_SUCCESS = '$stateChangeSuccess';
-                UIRouterEvents.STATE_CHANGE_ERROR = '$stateChangeError';
-                UIRouterEvents.STATE_NOT_FOUND = '$stateNotFound';
-            })(UIRouterEvents || (UIRouterEvents = {}));
-            var StateAccessLevels;
-            (function (StateAccessLevels) {
-                StateAccessLevels.PUBLIC = 'public';
-                StateAccessLevels.UNAUTHORIZED = 'unauthorized';
-                StateAccessLevels.AUTHORIZED = 'authorized';
-            })(StateAccessLevels = Interceptors.StateAccessLevels || (Interceptors.StateAccessLevels = {}));
-            var StateInterceptorEvents;
-            (function (StateInterceptorEvents) {
-                StateInterceptorEvents.FIRST_ROUTE = 'firstRoute';
-                StateInterceptorEvents.STATE_CHANGE_START = 'stateChangeStart';
-                StateInterceptorEvents.ENTERING_AUTHORIZED_AREA = 'enteringAuthorizedArea';
-                StateInterceptorEvents.ENTERING_UNAUTHORIZED_AREA = 'enteringUnauthorizedArea';
-                StateInterceptorEvents.ENTERING_PUBLIC_AREA = 'enteringPublicArea';
-            })(StateInterceptorEvents = Interceptors.StateInterceptorEvents || (Interceptors.StateInterceptorEvents = {}));
-            var StateInterceptor = (function () {
-                function StateInterceptor($rootScope) {
-                    this.$rootScope = $rootScope;
-                    this.events = new TSCore.Events.EventEmitter();
-                    this._firstRoute = null;
-                    this._lastRoute = null;
-                }
-                StateInterceptor.prototype.init = function () {
-                    this._attachRouterEvents();
-                };
-                StateInterceptor.prototype._attachRouterEvents = function () {
-                    this.$rootScope.$on(UIRouterEvents.STATE_CHANGE_START, _.bind(this._$stateChangeStart, this));
-                };
-                StateInterceptor.prototype._$stateChangeStart = function (event, toState, toParams, fromState, fromParams) {
-                    var params = {
-                        event: event,
-                        toState: toState,
-                        toParams: toParams,
-                        fromState: fromState,
-                        fromParams: fromParams
-                    };
-                    if (!fromState || fromState.accessLevel !== toState.accessLevel) {
-                        var eventName;
-                        switch (toState.accessLevel) {
-                            case StateAccessLevels.AUTHORIZED:
-                                eventName = StateInterceptorEvents.ENTERING_AUTHORIZED_AREA;
-                                break;
-                            case StateAccessLevels.PUBLIC:
-                                eventName = StateInterceptorEvents.ENTERING_PUBLIC_AREA;
-                                break;
-                            default:
-                            case StateAccessLevels.UNAUTHORIZED:
-                                eventName = StateInterceptorEvents.ENTERING_UNAUTHORIZED_AREA;
-                                break;
-                        }
-                        this.events.trigger(eventName, params);
-                    }
-                    this._lastRoute = {
-                        toState: toState,
-                        toParams: toParams
-                    };
-                    if (!this._firstRoute) {
-                        this._firstRoute = this._lastRoute;
-                        this.events.trigger(StateInterceptorEvents.FIRST_ROUTE, params);
-                    }
-                    this.events.trigger(StateInterceptorEvents.STATE_CHANGE_START, params);
-                };
-                StateInterceptor.prototype.getFirstRoute = function () {
-                    return this._firstRoute;
-                };
-                StateInterceptor.$inject = ['$rootScope'];
-                return StateInterceptor;
-            })();
-            Interceptors.StateInterceptor = StateInterceptor;
-        })(Interceptors = App.Interceptors || (App.Interceptors = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
 /// <reference path="Api/RequestHandler.ts" />
 /// <reference path="Data/Transformer.ts" />
 var TSCore;
@@ -2216,6 +2093,7 @@ var TSCore;
 })(TSCore || (TSCore = {}));
 /// <reference path="../../ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
+/// <reference path="TSCore/App/Api/IRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/IResource.ts" />
 /// <reference path="TSCore/App/Api/RequestHandler.ts" />
 /// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
@@ -2244,7 +2122,5 @@ var TSCore;
 /// <reference path="TSCore/App/Data/Transformer.ts" />
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
-/// <reference path="TSCore/App/Interceptors/HttpInterceptor.ts" />
-/// <reference path="TSCore/App/Interceptors/StateInterceptor.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
 //# sourceMappingURL=ts-core-app.js.map

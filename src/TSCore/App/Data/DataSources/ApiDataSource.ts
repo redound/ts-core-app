@@ -41,7 +41,7 @@ module TSCore.App.Data.DataSources {
 
         public execute(query: Query<any>): ng.IPromise<IDataSourceResponse> {
 
-            this.logger.info('execute');
+            this.logger.info('execute', query);
 
             var resourceName = query.getFrom();
 
@@ -138,7 +138,10 @@ module TSCore.App.Data.DataSources {
             return {
                 meta: meta,
                 graph: dataGraph,
-                references: dataGraph.getReferences(resourceName)
+                references: _.map(data, (item: any) => {
+
+                    return new Reference(resourceName, item.id);
+                })
             };
         }
 
@@ -160,7 +163,11 @@ module TSCore.App.Data.DataSources {
 
                 attributes[primaryKey] = resourceId;
 
-                var item = transformer.item(attributes);
+                var item = attributes;
+
+                if (transformer) {
+                    item = transformer.item(attributes);
+                }
 
                 _.each(relationships, (relationship: any, propertyName: string) => {
 

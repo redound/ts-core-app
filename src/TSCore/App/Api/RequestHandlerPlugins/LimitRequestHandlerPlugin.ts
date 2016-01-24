@@ -1,6 +1,7 @@
 ///<reference path="../../Data/Query/Query.ts"/>
 ///<reference path="../../Http/RequestOptions.ts"/>
 ///<reference path="../RequestHandler.ts"/>
+///<reference path="../IRequestHandlerPlugin.ts"/>
 
 
 module TSCore.App.Api.RequestHandlerPlugins {

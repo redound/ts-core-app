@@ -2,6 +2,7 @@
 /// <reference path="../typings/tsd.d.ts" />
 
 //grunt-start
+/// <reference path="TSCore/App/Api/IRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/IResource.ts" />
 /// <reference path="TSCore/App/Api/RequestHandler.ts" />
 /// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
@@ -30,7 +31,5 @@
 /// <reference path="TSCore/App/Data/Transformer.ts" />
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
-/// <reference path="TSCore/App/Interceptors/HttpInterceptor.ts" />
-/// <reference path="TSCore/App/Interceptors/StateInterceptor.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
 //grunt-end

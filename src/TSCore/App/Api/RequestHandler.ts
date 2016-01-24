@@ -1,7 +1,8 @@
 ///<reference path="../Http/RequestOptions.ts"/>
 ///<reference path="../Data/Query/Query.ts"/>
 ///<reference path="../Data/Query/IQueryExecutor.ts"/>
-///<reference path="Service.ts"/>
+///<reference path="./Service.ts"/>
+///<reference path="./IRequestHandlerPlugin.ts"/>
 
 module TSCore.App.Api {
 
@@ -18,10 +19,6 @@ module TSCore.App.Api {
         CONDITIONS,
         SORTERS,
         INCLUDES
-    }
-
-    export interface IRequestHandlerPlugin {
-        execute(requestOptions: RequestOptions, query: Query<any>): RequestHandlerFeatures|RequestHandlerFeatures[]
     }
 
     export class RequestHandler implements IQueryExecutor {

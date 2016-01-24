@@ -50,6 +50,9 @@ module TSCore.App.Data.DataSources {
         {
             this.logger.info('execute');
 
+            return this.$q.reject();
+
+
             if (query.hasFind()) {
 
                 var resourceName = query.getFrom();
@@ -151,7 +154,7 @@ module TSCore.App.Data.DataSources {
 
             if ((response.meta.total && this._graph.countItems(query.getFrom()) === response.meta.total) || (!query.hasOffset() && !query.hasLimit())) {
 
-                this._setResourceFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE);
+                //this._setResourceFlag(query.getFrom(), ResourceFlag.DATA_COMPLETE);
             }
 
             var queryResult = this._queryResultMap.get(serializedQuery);

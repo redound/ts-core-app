@@ -295,6 +295,8 @@ module TSCore.App.Data.Graph {
                 return this.get(value.value, callback);
             }
 
+            console.log('resolveValueRecursive', value);
+
             if (_.isArray(value)) {
 
                 value = _.map(value, (subValue, subKey) => {

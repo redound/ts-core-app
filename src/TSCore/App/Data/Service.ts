@@ -101,17 +101,17 @@ module TSCore.App.Data {
 
         /** Query **/
 
-        public query(resourceName: string): Query<ModelList<Model>> {
+        public query(resourceName: string): Query<ModelList<any>> {
 
-            return new Query<ModelList<Model>>(this).from(resourceName);
+            return new Query<ModelList<any>>(this).from(resourceName);
         }
 
-        public all(resourceName: string): ng.IPromise<IDataServiceResponse<ModelList<Model>>> {
+        public all(resourceName: string): ng.IPromise<IDataServiceResponse<ModelList<any>>> {
 
             return this.execute(this.query(resourceName));
         }
 
-        public find(resourceName: string, resourceId: any): ng.IPromise<IDataServiceResponse<Model>> {
+        public find(resourceName: string, resourceId: any): ng.IPromise<IDataServiceResponse<any>> {
 
             return this.execute(
 
@@ -127,7 +127,7 @@ module TSCore.App.Data {
             });
         }
 
-        public execute(query: Query<ModelList<Model>>): ng.IPromise<IDataServiceResponse<ModelList<Model>>> {
+        public execute(query: Query<ModelList<any>>): ng.IPromise<IDataServiceResponse<ModelList<any>>> {
 
             var response;
 
@@ -157,7 +157,7 @@ module TSCore.App.Data {
             });
         }
 
-        protected _createModels(response: IDataSourceResponse): ModelList<Model> {
+        protected _createModels(response: IDataSourceResponse): ModelList<any> {
 
             var graph = response.graph;
             var references = response.references;
@@ -193,7 +193,7 @@ module TSCore.App.Data {
 
         /** Create **/
 
-        public create(resourceName: string, data: any): ng.IPromise<IDataServiceResponse<Model>> {
+        public create(resourceName: string, data: any): ng.IPromise<IDataServiceResponse<any>> {
 
             return this._executeCreate(resourceName, data).then(response => {
 
@@ -204,7 +204,7 @@ module TSCore.App.Data {
             });
         }
 
-        public createModel(resourceName: string, model: Model, data?: any): ng.IPromise<IDataServiceResponse<Model>> {
+        public createModel(resourceName: string, model: any, data?: any): ng.IPromise<IDataServiceResponse<any>> {
 
             if (data) {
                 model.assignAll(data);
@@ -266,7 +266,7 @@ module TSCore.App.Data {
             });
         }
 
-        public updateModel(resourceName: string, model: Model, data?: any): ng.IPromise<void> {
+        public updateModel(resourceName: string, model: any, data?: any): ng.IPromise<void> {
 
             return this._executeUpdate(resourceName, model.getId(), data || model.toObject(true)).then(results => {
 
@@ -391,7 +391,7 @@ module TSCore.App.Data {
 
         /** Model Helpers **/
 
-        protected static _updateModel(model, data): Model {
+        protected static _updateModel(model, data): any {
 
             model.assignAll(data);
 
@@ -402,7 +402,7 @@ module TSCore.App.Data {
             return model;
         }
 
-        protected static _removeModel(model): Model {
+        protected static _removeModel(model): any {
 
             if (model instanceof ActiveModel) {
 
