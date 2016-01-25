@@ -101,30 +101,32 @@ declare module TSCore.App.Data {
     }
 }
 declare module TSCore.App.Data.Query {
-    enum ConditionTypes {
-        AND = 0,
-        OR = 1,
-    }
-    enum ConditionOperators {
-        IS_EQUAL = 0,
-        IS_GREATER_THAN = 1,
-        IS_GREATER_THAN_OR_EQUAL = 2,
-        IS_IN = 3,
-        IS_LESS_THAN = 4,
-        IS_LESS_THAN_OR_EQUAL = 5,
-        IS_LIKE = 6,
-        IS_NOT_EQUAL = 7,
-    }
     class Condition {
-        protected _type: ConditionTypes;
+        protected _type: TSCore.App.Data.Query.Condition.Type;
         protected _field: string;
-        protected _operator: ConditionOperators;
+        protected _operator: TSCore.App.Data.Query.Condition.Operator;
         protected _value: any;
-        constructor(type: ConditionTypes, field: string, operator: ConditionOperators, value: any);
-        getType(): ConditionTypes;
+        constructor(type: TSCore.App.Data.Query.Condition.Type, field: string, operator: TSCore.App.Data.Query.Condition.Operator, value: any);
+        getType(): TSCore.App.Data.Query.Condition.Type;
         getField(): string;
-        getOperator(): ConditionOperators;
+        getOperator(): TSCore.App.Data.Query.Condition.Operator;
         getValue(): any;
+    }
+    module Condition {
+        enum Type {
+            AND = 0,
+            OR = 1,
+        }
+        enum Operator {
+            IS_EQUAL = 0,
+            IS_GREATER_THAN = 1,
+            IS_GREATER_THAN_OR_EQUAL = 2,
+            IS_IN = 3,
+            IS_LESS_THAN = 4,
+            IS_LESS_THAN_OR_EQUAL = 5,
+            IS_LIKE = 6,
+            IS_NOT_EQUAL = 7,
+        }
     }
 }
 declare module TSCore.App.Data.Query {

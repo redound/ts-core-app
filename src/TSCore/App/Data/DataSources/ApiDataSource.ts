@@ -149,7 +149,7 @@ module TSCore.App.Data.DataSources {
 
             var graph = new Graph();
 
-            this._extractResource(data, (resourceName: string, resourceId: number, attributes: any, relationships: any) => {
+            this._extractResource(data, (resourceName: string, resourceId: any, attributes: any, relationships: any) => {
 
                 var resource = this.getDataService().getResource(resourceName);
 
@@ -161,7 +161,7 @@ module TSCore.App.Data.DataSources {
                 var model = resource.getModel();
                 var primaryKey = model.primaryKey();
 
-                attributes[primaryKey] = resourceId;
+                attributes[primaryKey] = parseInt(resourceId);
 
                 var item = attributes;
 

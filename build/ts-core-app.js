@@ -350,7 +350,6 @@ var TSCore;
                         if (this._isReference(value)) {
                             return this.get(value.value, callback);
                         }
-                        console.log('resolveValueRecursive', value);
                         if (_.isArray(value)) {
                             value = _.map(value, function (subValue, subKey) {
                                 return _this._resolveValueRecursive(key, subKey, subValue, callback);
@@ -396,22 +395,6 @@ var TSCore;
         (function (Data) {
             var Query;
             (function (Query) {
-                (function (ConditionTypes) {
-                    ConditionTypes[ConditionTypes["AND"] = 0] = "AND";
-                    ConditionTypes[ConditionTypes["OR"] = 1] = "OR";
-                })(Query.ConditionTypes || (Query.ConditionTypes = {}));
-                var ConditionTypes = Query.ConditionTypes;
-                (function (ConditionOperators) {
-                    ConditionOperators[ConditionOperators["IS_EQUAL"] = 0] = "IS_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
-                    ConditionOperators[ConditionOperators["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_IN"] = 3] = "IS_IN";
-                    ConditionOperators[ConditionOperators["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
-                    ConditionOperators[ConditionOperators["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
-                    ConditionOperators[ConditionOperators["IS_LIKE"] = 6] = "IS_LIKE";
-                    ConditionOperators[ConditionOperators["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
-                })(Query.ConditionOperators || (Query.ConditionOperators = {}));
-                var ConditionOperators = Query.ConditionOperators;
                 var Condition = (function () {
                     function Condition(type, field, operator, value) {
                         this._type = type;
@@ -434,6 +417,25 @@ var TSCore;
                     return Condition;
                 })();
                 Query.Condition = Condition;
+                var Condition;
+                (function (Condition) {
+                    (function (Type) {
+                        Type[Type["AND"] = 0] = "AND";
+                        Type[Type["OR"] = 1] = "OR";
+                    })(Condition.Type || (Condition.Type = {}));
+                    var Type = Condition.Type;
+                    (function (Operator) {
+                        Operator[Operator["IS_EQUAL"] = 0] = "IS_EQUAL";
+                        Operator[Operator["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
+                        Operator[Operator["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
+                        Operator[Operator["IS_IN"] = 3] = "IS_IN";
+                        Operator[Operator["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
+                        Operator[Operator["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
+                        Operator[Operator["IS_LIKE"] = 6] = "IS_LIKE";
+                        Operator[Operator["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
+                    })(Condition.Operator || (Condition.Operator = {}));
+                    var Operator = Condition.Operator;
+                })(Condition = Query.Condition || (Query.Condition = {}));
             })(Query = Data.Query || (Data.Query = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
@@ -1747,7 +1749,7 @@ var TSCore;
                             var transformer = resource.getTransformer();
                             var model = resource.getModel();
                             var primaryKey = model.primaryKey();
-                            attributes[primaryKey] = resourceId;
+                            attributes[primaryKey] = parseInt(resourceId);
                             var item = attributes;
                             if (transformer) {
                                 item = transformer.item(attributes);

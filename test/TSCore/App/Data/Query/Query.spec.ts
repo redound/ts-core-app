@@ -2,8 +2,8 @@
 
 import Query = TSCore.App.Data.Query.Query;
 import Condition = TSCore.App.Data.Query.Condition;
-import ConditionTypes = TSCore.App.Data.Query.ConditionTypes;
-import ConditionOperators = TSCore.App.Data.Query.ConditionOperators;
+import Type = TSCore.App.Data.Query.Condition.Type;
+import Operator = TSCore.App.Data.Query.Condition.Operator;
 import Sorter = TSCore.App.Data.Query.Sorter;
 import SortDirections = TSCore.App.Data.Query.SortDirections;
 
@@ -21,10 +21,10 @@ describe("TSCore.App.Data.Query.Query", () => {
             query1.from("projects");
 
             // Condition
-            query1.condition(new Condition(ConditionTypes.AND, 'a', ConditionOperators.IS_EQUAL, 'g'));
-            query1.condition(new Condition(ConditionTypes.AND, 'b', ConditionOperators.IS_GREATER_THAN, 'h'));
-            query1.condition(new Condition(ConditionTypes.AND, 'c', ConditionOperators.IS_GREATER_THAN_OR_EQUAL, 'i'));
-            query1.condition(new Condition(ConditionTypes.AND, 'd', ConditionOperators.IS_IN, 'j'));
+            query1.condition(new Condition(Type.AND, 'a', Operator.IS_EQUAL, 'g'));
+            query1.condition(new Condition(Type.AND, 'b', Operator.IS_GREATER_THAN, 'h'));
+            query1.condition(new Condition(Type.AND, 'c', Operator.IS_GREATER_THAN_OR_EQUAL, 'i'));
+            query1.condition(new Condition(Type.AND, 'd', Operator.IS_IN, 'j'));
 
             // Sorters
             query1.sorter(new Sorter('a', SortDirections.ASCENDING));
@@ -38,10 +38,10 @@ describe("TSCore.App.Data.Query.Query", () => {
             query2.from("projects");
 
             // Condition
-            query2.condition(new Condition(ConditionTypes.AND, 'a', ConditionOperators.IS_EQUAL, 'g'));
-            query2.condition(new Condition(ConditionTypes.AND, 'b', ConditionOperators.IS_GREATER_THAN, 'h'));
-            query2.condition(new Condition(ConditionTypes.AND, 'c', ConditionOperators.IS_GREATER_THAN_OR_EQUAL, 'i'));
-            query2.condition(new Condition(ConditionTypes.AND, 'd', ConditionOperators.IS_IN, 'j'));
+            query2.condition(new Condition(Type.AND, 'a', Operator.IS_EQUAL, 'g'));
+            query2.condition(new Condition(Type.AND, 'b', Operator.IS_GREATER_THAN, 'h'));
+            query2.condition(new Condition(Type.AND, 'c', Operator.IS_GREATER_THAN_OR_EQUAL, 'i'));
+            query2.condition(new Condition(Type.AND, 'd', Operator.IS_IN, 'j'));
 
             // Sorters
             query2.sorter(new Sorter('a', SortDirections.ASCENDING));
