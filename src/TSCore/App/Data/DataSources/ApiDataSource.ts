@@ -54,6 +54,8 @@ module TSCore.App.Data.DataSources {
 
             this.logger.info('create');
 
+            data = this._transformRequest(resourceName, data);
+
             return this.apiService
                 .create(resourceName, data)
                 .then(response => this._transformResponse(resourceName, response));
@@ -62,6 +64,8 @@ module TSCore.App.Data.DataSources {
         public update(resourceName: string, resourceId: any, data: any): ng.IPromise<IDataSourceResponse> {
 
             this.logger.info('update');
+
+            data = this._transformRequest(resourceName, data);
 
             return this.apiService
                 .update(resourceName, resourceId, data)
@@ -109,6 +113,19 @@ module TSCore.App.Data.DataSources {
         {
             // Do nothing
             return this.$q.when();
+        }
+
+        protected _transformRequest(resourceName: string, data: any) {
+
+            var resource = this.getDataService().getResource(resourceName);
+
+            if (!resource) {
+                throw new Exception('Resource `' + resourceName + '` could not be found!');
+            }
+
+            var transformer = resource.getTransformer();
+
+            return transformer.transformRequest(data);
         }
 
         protected _transformResponse(resourceName: string, response: any) {
@@ -165,9 +182,7 @@ module TSCore.App.Data.DataSources {
 
                 var item = attributes;
 
-                if (transformer) {
-                    item = transformer.item(attributes);
-                }
+                item = transformer.item(attributes);
 
                 _.each(relationships, (relationship: any, propertyName: string) => {
 

@@ -10,8 +10,12 @@ module TSCore.App.Data {
 
         public availableIncludes = [];
 
-        public transform(item) {
+        public transformRequest(data) {
+            return data;
+        }
 
+        public transform(item) {
+            return item;
         }
 
         public collection(data) {
@@ -51,6 +55,11 @@ module TSCore.App.Data {
         public static item(data) {
             var transformer = new this;
             return transformer.item(data);
+        }
+
+        public static transformRequest(data) {
+            var transformer = new this;
+            return transformer.transformRequest(data);
         }
     }
 }

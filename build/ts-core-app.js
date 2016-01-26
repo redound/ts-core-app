@@ -397,22 +397,22 @@ var TSCore;
             (function (Query) {
                 var Condition = (function () {
                     function Condition(type, field, operator, value) {
-                        this._type = type;
-                        this._field = field;
-                        this._operator = operator;
-                        this._value = value;
+                        this.type = type;
+                        this.field = field;
+                        this.operator = operator;
+                        this.value = value;
                     }
                     Condition.prototype.getType = function () {
-                        return this._type;
+                        return this.type;
                     };
                     Condition.prototype.getField = function () {
-                        return this._field;
+                        return this.field;
                     };
                     Condition.prototype.getOperator = function () {
-                        return this._operator;
+                        return this.operator;
                     };
                     Condition.prototype.getValue = function () {
-                        return this._value;
+                        return this.value;
                     };
                     return Condition;
                 })();
@@ -890,7 +890,11 @@ var TSCore;
                     _super.apply(this, arguments);
                     this.availableIncludes = [];
                 }
+                Transformer.prototype.transformRequest = function (data) {
+                    return data;
+                };
                 Transformer.prototype.transform = function (item) {
+                    return item;
                 };
                 Transformer.prototype.collection = function (data) {
                     var _this = this;
@@ -920,6 +924,10 @@ var TSCore;
                 Transformer.item = function (data) {
                     var transformer = new this;
                     return transformer.item(data);
+                };
+                Transformer.transformRequest = function (data) {
+                    var transformer = new this;
+                    return transformer.transformRequest(data);
                 };
                 return Transformer;
             })(TSCore.BaseObject);
@@ -1676,6 +1684,7 @@ var TSCore;
                     ApiDataSource.prototype.create = function (resourceName, data) {
                         var _this = this;
                         this.logger.info('create');
+                        data = this._transformRequest(resourceName, data);
                         return this.apiService
                             .create(resourceName, data)
                             .then(function (response) { return _this._transformResponse(resourceName, response); });
@@ -1683,6 +1692,7 @@ var TSCore;
                     ApiDataSource.prototype.update = function (resourceName, resourceId, data) {
                         var _this = this;
                         this.logger.info('update');
+                        data = this._transformRequest(resourceName, data);
                         return this.apiService
                             .update(resourceName, resourceId, data)
                             .then(function (response) { return _this._transformResponse(resourceName, response); });
@@ -1712,6 +1722,14 @@ var TSCore;
                     };
                     ApiDataSource.prototype.clear = function () {
                         return this.$q.when();
+                    };
+                    ApiDataSource.prototype._transformRequest = function (resourceName, data) {
+                        var resource = this.getDataService().getResource(resourceName);
+                        if (!resource) {
+                            throw new Exception('Resource `' + resourceName + '` could not be found!');
+                        }
+                        var transformer = resource.getTransformer();
+                        return transformer.transformRequest(data);
                     };
                     ApiDataSource.prototype._transformResponse = function (resourceName, response) {
                         var _this = this;
@@ -1751,9 +1769,7 @@ var TSCore;
                             var primaryKey = model.primaryKey();
                             attributes[primaryKey] = parseInt(resourceId);
                             var item = attributes;
-                            if (transformer) {
-                                item = transformer.item(attributes);
-                            }
+                            item = transformer.item(attributes);
                             _.each(relationships, function (relationship, propertyName) {
                                 if (_.isArray(relationship.data)) {
                                     item[propertyName] = _.map(relationship.data, function (ref) {

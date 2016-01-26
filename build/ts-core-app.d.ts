@@ -102,10 +102,10 @@ declare module TSCore.App.Data {
 }
 declare module TSCore.App.Data.Query {
     class Condition {
-        protected _type: TSCore.App.Data.Query.Condition.Type;
-        protected _field: string;
-        protected _operator: TSCore.App.Data.Query.Condition.Operator;
-        protected _value: any;
+        type: TSCore.App.Data.Query.Condition.Type;
+        field: string;
+        operator: TSCore.App.Data.Query.Condition.Operator;
+        value: any;
         constructor(type: TSCore.App.Data.Query.Condition.Type, field: string, operator: TSCore.App.Data.Query.Condition.Operator, value: any);
         getType(): TSCore.App.Data.Query.Condition.Type;
         getField(): string;
@@ -272,11 +272,13 @@ declare module TSCore.App.Data {
     }
     class Transformer extends TSCore.BaseObject {
         availableIncludes: any[];
-        transform(item: any): void;
-        collection(data: any): void[];
-        item(data: any): void;
-        static collection(data: any): void[];
-        static item(data: any): void;
+        transformRequest(data: any): any;
+        transform(item: any): any;
+        collection(data: any): any[];
+        item(data: any): any;
+        static collection(data: any): any[];
+        static item(data: any): any;
+        static transformRequest(data: any): any;
     }
 }
 declare module TSCore.App.Api {
@@ -486,6 +488,7 @@ declare module TSCore.App.Data.DataSources {
         notifyUpdate(response: IDataSourceResponse): ng.IPromise<void>;
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
         clear(): ng.IPromise<any>;
+        protected _transformRequest(resourceName: string, data: any): any;
         protected _transformResponse(resourceName: string, response: any): ng.IPromise<{
             meta: any;
             graph: Graph;

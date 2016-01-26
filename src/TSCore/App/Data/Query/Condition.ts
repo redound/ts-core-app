@@ -2,37 +2,37 @@ module TSCore.App.Data.Query {
 
     export class Condition {
 
-        protected _type: TSCore.App.Data.Query.Condition.Type;
-        protected _field: string;
-        protected _operator: TSCore.App.Data.Query.Condition.Operator;
-        protected _value: any;
+        public type: TSCore.App.Data.Query.Condition.Type;
+        public field: string;
+        public operator: TSCore.App.Data.Query.Condition.Operator;
+        public value: any;
 
         public constructor(type: TSCore.App.Data.Query.Condition.Type, field: string, operator: TSCore.App.Data.Query.Condition.Operator, value: any) {
 
-            this._type = type;
-            this._field = field;
-            this._operator = operator;
-            this._value = value;
+            this.type = type;
+            this.field = field;
+            this.operator = operator;
+            this.value = value;
         }
 
         public getType(): TSCore.App.Data.Query.Condition.Type {
 
-            return this._type;
+            return this.type;
         }
 
         public getField() {
 
-            return this._field;
+            return this.field;
         }
 
         public getOperator(): TSCore.App.Data.Query.Condition.Operator {
 
-            return this._operator;
+            return this.operator;
         }
 
         public getValue() {
 
-            return this._value;
+            return this.value;
         }
     }
 
