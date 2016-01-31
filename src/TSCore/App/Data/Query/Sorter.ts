@@ -7,23 +7,23 @@ module TSCore.App.Data.Query {
 
     export class Sorter {
 
-        protected _field: string;
-        protected _direction: SortDirections;
+        public field: string;
+        public direction: SortDirections;
 
         public constructor(field: string, direction: SortDirections) {
 
-            this._field = field;
-            this._direction = direction;
+            this.field = field;
+            this.direction = direction;
         }
 
         public getField(): string {
 
-            return this._field;
+            return this.field;
         }
 
         public getDirection(): SortDirections {
 
-            return this._direction;
+            return this.direction;
         }
     }
 }

@@ -1,13 +1,16 @@
+///<reference path="ConditionType.ts"/>
+///<reference path="ConditionOperator.ts"/>
+
 module TSCore.App.Data.Query {
 
     export class Condition {
 
-        public type: TSCore.App.Data.Query.Condition.Type;
+        public type: ConditionType;
         public field: string;
-        public operator: TSCore.App.Data.Query.Condition.Operator;
+        public operator: ConditionOperator;
         public value: any;
 
-        public constructor(type: TSCore.App.Data.Query.Condition.Type, field: string, operator: TSCore.App.Data.Query.Condition.Operator, value: any) {
+        public constructor(type?: ConditionType, field?: string, operator?: ConditionOperator, value?: any) {
 
             this.type = type;
             this.field = field;
@@ -15,7 +18,7 @@ module TSCore.App.Data.Query {
             this.value = value;
         }
 
-        public getType(): TSCore.App.Data.Query.Condition.Type {
+        public getType(): ConditionType {
 
             return this.type;
         }
@@ -25,7 +28,7 @@ module TSCore.App.Data.Query {
             return this.field;
         }
 
-        public getOperator(): TSCore.App.Data.Query.Condition.Operator {
+        public getOperator(): ConditionOperator {
 
             return this.operator;
         }
@@ -33,25 +36,6 @@ module TSCore.App.Data.Query {
         public getValue() {
 
             return this.value;
-        }
-    }
-
-    export module Condition {
-
-        export enum Type {
-            AND,
-            OR
-        }
-
-        export enum Operator {
-            IS_EQUAL,
-            IS_GREATER_THAN,
-            IS_GREATER_THAN_OR_EQUAL,
-            IS_IN,
-            IS_LESS_THAN,
-            IS_LESS_THAN_OR_EQUAL,
-            IS_LIKE,
-            IS_NOT_EQUAL,
         }
     }
 }

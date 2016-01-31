@@ -114,7 +114,7 @@ module TSCore.App.Data.Query {
             return this;
         }
 
-        public addManyConditions(conditions: Condition[]): Query<T> {
+        public multipleConditions(conditions: Condition[]): Query<T> {
 
             this._conditions = this._conditions.concat(conditions);
             return this;
@@ -136,7 +136,7 @@ module TSCore.App.Data.Query {
             return this;
         }
 
-        public addManySorters(sorters: Sorter[]): Query<T> {
+        public multipleSorters(sorters: Sorter[]): Query<T> {
 
             this._sorters = this._sorters.concat(sorters);
             return this;
@@ -158,7 +158,7 @@ module TSCore.App.Data.Query {
             return this;
         }
 
-        public addManyIncludes(includes: string[]): Query<T> {
+        public multipleIncludes(includes: string[]): Query<T> {
 
             this._includes = this._includes.concat(includes);
             return this;
@@ -218,15 +218,15 @@ module TSCore.App.Data.Query {
             }
 
             if (query.hasConditions()) {
-                this.addManyConditions(query.getConditions());
+                this.multipleConditions(query.getConditions());
             }
 
             if (query.hasSorters()) {
-                this.addManySorters(query.getSorters());
+                this.multipleSorters(query.getSorters());
             }
 
             if (query.hasIncludes()) {
-                this.addManyIncludes(query.getIncludes());
+                this.multipleIncludes(query.getIncludes());
             }
 
             if (query.hasFind()) {

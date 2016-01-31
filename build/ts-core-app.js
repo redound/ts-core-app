@@ -395,6 +395,48 @@ var TSCore;
         (function (Data) {
             var Query;
             (function (Query) {
+                (function (ConditionType) {
+                    ConditionType[ConditionType["AND"] = 0] = "AND";
+                    ConditionType[ConditionType["OR"] = 1] = "OR";
+                })(Query.ConditionType || (Query.ConditionType = {}));
+                var ConditionType = Query.ConditionType;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
+                (function (ConditionOperator) {
+                    ConditionOperator[ConditionOperator["IS_EQUAL"] = 0] = "IS_EQUAL";
+                    ConditionOperator[ConditionOperator["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
+                    ConditionOperator[ConditionOperator["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
+                    ConditionOperator[ConditionOperator["IS_IN"] = 3] = "IS_IN";
+                    ConditionOperator[ConditionOperator["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
+                    ConditionOperator[ConditionOperator["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
+                    ConditionOperator[ConditionOperator["IS_LIKE"] = 6] = "IS_LIKE";
+                    ConditionOperator[ConditionOperator["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
+                })(Query.ConditionOperator || (Query.ConditionOperator = {}));
+                var ConditionOperator = Query.ConditionOperator;
+            })(Query = Data.Query || (Data.Query = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="ConditionType.ts"/>
+///<reference path="ConditionOperator.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Query;
+            (function (Query) {
                 var Condition = (function () {
                     function Condition(type, field, operator, value) {
                         this.type = type;
@@ -417,25 +459,6 @@ var TSCore;
                     return Condition;
                 })();
                 Query.Condition = Condition;
-                var Condition;
-                (function (Condition) {
-                    (function (Type) {
-                        Type[Type["AND"] = 0] = "AND";
-                        Type[Type["OR"] = 1] = "OR";
-                    })(Condition.Type || (Condition.Type = {}));
-                    var Type = Condition.Type;
-                    (function (Operator) {
-                        Operator[Operator["IS_EQUAL"] = 0] = "IS_EQUAL";
-                        Operator[Operator["IS_GREATER_THAN"] = 1] = "IS_GREATER_THAN";
-                        Operator[Operator["IS_GREATER_THAN_OR_EQUAL"] = 2] = "IS_GREATER_THAN_OR_EQUAL";
-                        Operator[Operator["IS_IN"] = 3] = "IS_IN";
-                        Operator[Operator["IS_LESS_THAN"] = 4] = "IS_LESS_THAN";
-                        Operator[Operator["IS_LESS_THAN_OR_EQUAL"] = 5] = "IS_LESS_THAN_OR_EQUAL";
-                        Operator[Operator["IS_LIKE"] = 6] = "IS_LIKE";
-                        Operator[Operator["IS_NOT_EQUAL"] = 7] = "IS_NOT_EQUAL";
-                    })(Condition.Operator || (Condition.Operator = {}));
-                    var Operator = Condition.Operator;
-                })(Condition = Query.Condition || (Query.Condition = {}));
             })(Query = Data.Query || (Data.Query = {}));
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
@@ -455,14 +478,14 @@ var TSCore;
                 var SortDirections = Query.SortDirections;
                 var Sorter = (function () {
                     function Sorter(field, direction) {
-                        this._field = field;
-                        this._direction = direction;
+                        this.field = field;
+                        this.direction = direction;
                     }
                     Sorter.prototype.getField = function () {
-                        return this._field;
+                        return this.field;
                     };
                     Sorter.prototype.getDirection = function () {
-                        return this._direction;
+                        return this.direction;
                     };
                     return Sorter;
                 })();
@@ -550,7 +573,7 @@ var TSCore;
                         this._conditions.push(condition);
                         return this;
                     };
-                    Query.prototype.addManyConditions = function (conditions) {
+                    Query.prototype.multipleConditions = function (conditions) {
                         this._conditions = this._conditions.concat(conditions);
                         return this;
                     };
@@ -564,7 +587,7 @@ var TSCore;
                         this._sorters.push(sorter);
                         return this;
                     };
-                    Query.prototype.addManySorters = function (sorters) {
+                    Query.prototype.multipleSorters = function (sorters) {
                         this._sorters = this._sorters.concat(sorters);
                         return this;
                     };
@@ -578,7 +601,7 @@ var TSCore;
                         this._includes.push(include);
                         return this;
                     };
-                    Query.prototype.addManyIncludes = function (includes) {
+                    Query.prototype.multipleIncludes = function (includes) {
                         this._includes = this._includes.concat(includes);
                         return this;
                     };
@@ -618,13 +641,13 @@ var TSCore;
                             this.limit(query.getLimit());
                         }
                         if (query.hasConditions()) {
-                            this.addManyConditions(query.getConditions());
+                            this.multipleConditions(query.getConditions());
                         }
                         if (query.hasSorters()) {
-                            this.addManySorters(query.getSorters());
+                            this.multipleSorters(query.getSorters());
                         }
                         if (query.hasIncludes()) {
-                            this.addManyIncludes(query.getIncludes());
+                            this.multipleIncludes(query.getIncludes());
                         }
                         if (query.hasFind()) {
                             this.find(query.getFind());
@@ -1923,7 +1946,6 @@ var TSCore;
                             };
                         }
                         queryResult.references.setRange(offset, references);
-                        console.log('update queryResult', queryResult);
                         this._queryResultMap.set(serializedQuery, queryResult);
                         return this.$q.when();
                     };
@@ -2132,6 +2154,8 @@ var TSCore;
 /// <reference path="TSCore/App/Data/IResource.ts" />
 /// <reference path="TSCore/App/Data/Model/ActiveModel.ts" />
 /// <reference path="TSCore/App/Data/Query/Condition.ts" />
+/// <reference path="TSCore/App/Data/Query/ConditionOperator.ts" />
+/// <reference path="TSCore/App/Data/Query/ConditionType.ts" />
 /// <reference path="TSCore/App/Data/Query/IQueryExecutor.ts" />
 /// <reference path="TSCore/App/Data/Query/Query.ts" />
 /// <reference path="TSCore/App/Data/Query/Sorter.ts" />

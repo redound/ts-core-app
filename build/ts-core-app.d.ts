@@ -101,32 +101,34 @@ declare module TSCore.App.Data {
     }
 }
 declare module TSCore.App.Data.Query {
-    class Condition {
-        type: TSCore.App.Data.Query.Condition.Type;
-        field: string;
-        operator: TSCore.App.Data.Query.Condition.Operator;
-        value: any;
-        constructor(type: TSCore.App.Data.Query.Condition.Type, field: string, operator: TSCore.App.Data.Query.Condition.Operator, value: any);
-        getType(): TSCore.App.Data.Query.Condition.Type;
-        getField(): string;
-        getOperator(): TSCore.App.Data.Query.Condition.Operator;
-        getValue(): any;
+    enum ConditionType {
+        AND = 0,
+        OR = 1,
     }
-    module Condition {
-        enum Type {
-            AND = 0,
-            OR = 1,
-        }
-        enum Operator {
-            IS_EQUAL = 0,
-            IS_GREATER_THAN = 1,
-            IS_GREATER_THAN_OR_EQUAL = 2,
-            IS_IN = 3,
-            IS_LESS_THAN = 4,
-            IS_LESS_THAN_OR_EQUAL = 5,
-            IS_LIKE = 6,
-            IS_NOT_EQUAL = 7,
-        }
+}
+declare module TSCore.App.Data.Query {
+    enum ConditionOperator {
+        IS_EQUAL = 0,
+        IS_GREATER_THAN = 1,
+        IS_GREATER_THAN_OR_EQUAL = 2,
+        IS_IN = 3,
+        IS_LESS_THAN = 4,
+        IS_LESS_THAN_OR_EQUAL = 5,
+        IS_LIKE = 6,
+        IS_NOT_EQUAL = 7,
+    }
+}
+declare module TSCore.App.Data.Query {
+    class Condition {
+        type: ConditionType;
+        field: string;
+        operator: ConditionOperator;
+        value: any;
+        constructor(type?: ConditionType, field?: string, operator?: ConditionOperator, value?: any);
+        getType(): ConditionType;
+        getField(): string;
+        getOperator(): ConditionOperator;
+        getValue(): any;
     }
 }
 declare module TSCore.App.Data.Query {
@@ -135,8 +137,8 @@ declare module TSCore.App.Data.Query {
         DESCENDING = 1,
     }
     class Sorter {
-        protected _field: string;
-        protected _direction: SortDirections;
+        field: string;
+        direction: SortDirections;
         constructor(field: string, direction: SortDirections);
         getField(): string;
         getDirection(): SortDirections;
@@ -173,15 +175,15 @@ declare module TSCore.App.Data.Query {
         getLimit(): number;
         hasLimit(): boolean;
         condition(condition: Condition): Query<T>;
-        addManyConditions(conditions: Condition[]): Query<T>;
+        multipleConditions(conditions: Condition[]): Query<T>;
         getConditions(): Condition[];
         hasConditions(): boolean;
         sorter(sorter: Sorter): Query<T>;
-        addManySorters(sorters: Sorter[]): Query<T>;
+        multipleSorters(sorters: Sorter[]): Query<T>;
         getSorters(): Sorter[];
         hasSorters(): boolean;
         include(include: string): Query<T>;
-        addManyIncludes(includes: string[]): Query<T>;
+        multipleIncludes(includes: string[]): Query<T>;
         getIncludes(): string[];
         hasIncludes(): boolean;
         find(id: any): Query<T>;

@@ -170,8 +170,6 @@ module TSCore.App.Data.DataSources {
 
             queryResult.references.setRange(offset, references);
 
-            console.log('update queryResult', queryResult);
-
             this._queryResultMap.set(serializedQuery, queryResult);
 
             return this.$q.when();

@@ -67,8 +67,8 @@ describe("TSCore.App.Data.JsonGraph", function () {
 /// <reference path="../../../TSCore.spec.ts" />
 var Query = TSCore.App.Data.Query.Query;
 var Condition = TSCore.App.Data.Query.Condition;
-var Type = TSCore.App.Data.Query.Condition.Type;
-var Operator = TSCore.App.Data.Query.Condition.Operator;
+var ConditionType = TSCore.App.Data.Query.ConditionType;
+var ConditionOperator = TSCore.App.Data.Query.ConditionOperator;
 var Sorter = TSCore.App.Data.Query.Sorter;
 var SortDirections = TSCore.App.Data.Query.SortDirections;
 describe("TSCore.App.Data.Query.Query", function () {
@@ -76,19 +76,19 @@ describe("TSCore.App.Data.Query.Query", function () {
         it("should serialize the properties given", function () {
             var query1 = new Query;
             query1.from("projects");
-            query1.condition(new Condition(Type.AND, 'a', Operator.IS_EQUAL, 'g'));
-            query1.condition(new Condition(Type.AND, 'b', Operator.IS_GREATER_THAN, 'h'));
-            query1.condition(new Condition(Type.AND, 'c', Operator.IS_GREATER_THAN_OR_EQUAL, 'i'));
-            query1.condition(new Condition(Type.AND, 'd', Operator.IS_IN, 'j'));
+            query1.condition(new Condition(ConditionType.AND, 'a', ConditionOperator.IS_EQUAL, 'g'));
+            query1.condition(new Condition(ConditionType.AND, 'b', ConditionOperator.IS_GREATER_THAN, 'h'));
+            query1.condition(new Condition(ConditionType.AND, 'c', ConditionOperator.IS_GREATER_THAN_OR_EQUAL, 'i'));
+            query1.condition(new Condition(ConditionType.AND, 'd', ConditionOperator.IS_IN, 'j'));
             query1.sorter(new Sorter('a', SortDirections.ASCENDING));
             query1.sorter(new Sorter('b', SortDirections.DESCENDING));
             var query1Conditions = query1.serialize(["from", "conditions", "sorters"]);
             var query2 = new Query;
             query2.from("projects");
-            query2.condition(new Condition(Type.AND, 'a', Operator.IS_EQUAL, 'g'));
-            query2.condition(new Condition(Type.AND, 'b', Operator.IS_GREATER_THAN, 'h'));
-            query2.condition(new Condition(Type.AND, 'c', Operator.IS_GREATER_THAN_OR_EQUAL, 'i'));
-            query2.condition(new Condition(Type.AND, 'd', Operator.IS_IN, 'j'));
+            query2.condition(new Condition(ConditionType.AND, 'a', ConditionOperator.IS_EQUAL, 'g'));
+            query2.condition(new Condition(ConditionType.AND, 'b', ConditionOperator.IS_GREATER_THAN, 'h'));
+            query2.condition(new Condition(ConditionType.AND, 'c', ConditionOperator.IS_GREATER_THAN_OR_EQUAL, 'i'));
+            query2.condition(new Condition(ConditionType.AND, 'd', ConditionOperator.IS_IN, 'j'));
             query2.sorter(new Sorter('a', SortDirections.ASCENDING));
             query2.sorter(new Sorter('b', SortDirections.DESCENDING));
             query2.find(1);
