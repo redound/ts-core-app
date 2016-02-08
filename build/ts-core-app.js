@@ -505,6 +505,8 @@ var TSCore;
         (function (Data) {
             var Query;
             (function (Query_1) {
+                var Condition = TSCore.App.Data.Query.Condition;
+                var Sorter = TSCore.App.Data.Query.Sorter;
                 var Query = (function () {
                     function Query(executor) {
                         this._offset = null;
@@ -669,6 +671,38 @@ var TSCore;
                     };
                     Query.from = function (from) {
                         return (new this).from(from);
+                    };
+                    Query.prototype.toObject = function () {
+                        var obj = {};
+                        if (this.hasConditions()) {
+                            obj.conditions = this.getConditions();
+                        }
+                        if (this.hasSorters()) {
+                            obj.sorters = this.getSorters();
+                        }
+                        if (this.hasOffset()) {
+                            obj.offset = this.getOffset();
+                        }
+                        if (this.hasLimit()) {
+                            obj.limit = this.getLimit();
+                        }
+                        return obj;
+                    };
+                    Query.fromObject = function (obj) {
+                        var query = new Query;
+                        if (obj.offset) {
+                            query.offset(obj.offset);
+                        }
+                        if (obj.limit) {
+                            query.limit(obj.limit);
+                        }
+                        if (obj.conditions) {
+                            query.multipleConditions(_.map(obj.conditions, function (data) { return new Condition(data.type, data.field, data.operator, data.value); }));
+                        }
+                        if (obj.sorters) {
+                            query.multipleSorters(_.map(obj.sorters, function (data) { return new Sorter(data.field, data.direction); }));
+                        }
+                        return query;
                     };
                     return Query;
                 })();

@@ -193,6 +193,8 @@ declare module TSCore.App.Data.Query {
         merge(query: Query<T>): Query<T>;
         serialize(opts: string[]): string;
         static from(from: any): Query<{}>;
+        toObject(): any;
+        static fromObject<T>(obj: any): Query<T>;
     }
 }
 declare module TSCore.App.Data.Query {

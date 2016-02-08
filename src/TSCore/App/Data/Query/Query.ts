@@ -259,5 +259,55 @@ module TSCore.App.Data.Query {
 
             return (new this).from(from);
         }
+
+        public toObject(): any {
+
+            var obj: any = {};
+
+            if (this.hasConditions()) {
+                obj.conditions = this.getConditions();
+            }
+
+            if (this.hasSorters()) {
+                obj.sorters = this.getSorters();
+            }
+
+            if (this.hasOffset()) {
+                obj.offset = this.getOffset();
+            }
+
+            if (this.hasLimit()) {
+                obj.limit = this.getLimit();
+            }
+
+            return obj;
+        }
+
+        public static fromObject<T>(obj: any): Query<T> {
+
+            var query = new Query;
+
+            if (obj.offset) {
+
+                query.offset(obj.offset);
+            }
+
+            if (obj.limit) {
+
+                query.limit(obj.limit);
+            }
+
+            if (obj.conditions) {
+
+                query.multipleConditions(_.map(obj.conditions, (data:any) => new Condition(data.type, data.field, data.operator, data.value)));
+            }
+
+            if (obj.sorters) {
+
+                query.multipleSorters(_.map(obj.sorters, (data:any) => new Sorter(data.field, data.direction)));
+            }
+
+            return query;
+        }
     }
 }
