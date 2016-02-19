@@ -34,4 +34,5 @@
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
+/// <reference path="TSCore/App/UI/View.ts" />
 //grunt-end

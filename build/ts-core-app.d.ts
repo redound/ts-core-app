@@ -616,3 +616,30 @@ declare module TSCore.App {
         getTransformer(): ITransformer;
     }
 }
+declare module TSCore.App.UI {
+    class View {
+        static DELEGATE_EVENT_SPLITTER: RegExp;
+        tagName: string;
+        className: string;
+        attributes: any;
+        $el: JQuery;
+        el: HTMLElement;
+        id: number;
+        cid: string;
+        constructor();
+        $(selector: any): JQuery;
+        initialize(): void;
+        render(): View;
+        remove(): View;
+        private _removeElement();
+        setElement(element: JQuery | HTMLElement): View;
+        protected _setElement(el: JQuery | HTMLElement): void;
+        delegateEvents(events?: any): View;
+        delegate(eventName: string, selector: string, listener: any): View;
+        undelegateEvents(): View;
+        undelegate(eventName: string, selector: string, listener: any): View;
+        protected _createElement(tagName: string): HTMLElement;
+        protected _ensureElement(): void;
+        protected _setAttributes(attributes: any): void;
+    }
+}
