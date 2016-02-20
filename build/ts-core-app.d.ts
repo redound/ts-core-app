@@ -616,6 +616,51 @@ declare module TSCore.App {
         getTransformer(): ITransformer;
     }
 }
+declare module TSCore.App.UI.SvgIcon {
+    class SvgIcon {
+        element: HTMLElement;
+        viewBoxSize: number;
+        constructor(el: HTMLElement);
+        setElement(el: HTMLElement): SvgIcon;
+        setViewBoxSize(viewBoxSize: number): SvgIcon;
+        prepareAndStyle(): void;
+        cloneSVG(): HTMLElement;
+    }
+}
+declare module TSCore.App.UI.SvgIcon {
+    class SvgIconDirective {
+        protected svgIconService: TSCore.App.UI.SvgIcon.SvgIconService;
+        restrict: string;
+        constructor(svgIconService: TSCore.App.UI.SvgIcon.SvgIconService);
+        link: (scope: any, element: any, attr: any) => void;
+    }
+}
+declare module TSCore.App.UI.SvgIcon {
+    class SvgIconService {
+        protected iconRegistry: TSCore.Data.Dictionary<string, string>;
+        protected $http: ng.IHttpService;
+        protected $q: ng.IQService;
+        protected $log: ng.ILogService;
+        protected $templateCache: ng.ITemplateCacheService;
+        protected static URL_REGEX: RegExp;
+        protected iconCache: TSCore.Data.Dictionary<string, HTMLElement>;
+        constructor(iconRegistry: TSCore.Data.Dictionary<string, string>, $http: ng.IHttpService, $q: ng.IQService, $log: ng.ILogService, $templateCache: ng.ITemplateCacheService);
+        preloadIcons(ids: string[]): ng.IPromise<any>;
+        getIcon(id: string): ng.IPromise<HTMLElement>;
+        instant(id: string): HTMLElement;
+        loadByURL(url: string): ng.IPromise<HTMLElement>;
+        announceNotFound(err: any): ng.IPromise<any>;
+        cacheIcon(id: string, icon: HTMLElement): HTMLElement;
+    }
+}
+declare module TSCore.App.UI.SvgIcon {
+    class SvgIconProvider {
+        defaultViewBoxSize: number;
+        iconRegistry: TSCore.Data.Dictionary<string, string>;
+        $get: (string | (($http: any, $q: any, $log: any, $templateCache: any) => SvgIconService))[];
+        icon(id: string, path: string): SvgIconProvider;
+    }
+}
 declare module TSCore.App.UI {
     class View {
         static DELEGATE_EVENT_SPLITTER: RegExp;

@@ -34,5 +34,9 @@
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIcon.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconDirective.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconProvider.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconService.ts" />
 /// <reference path="TSCore/App/UI/View.ts" />
 //grunt-end

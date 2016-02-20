@@ -2171,6 +2171,196 @@ var TSCore;
     (function (App) {
         var UI;
         (function (UI) {
+            var SvgIcon;
+            (function (SvgIcon_1) {
+                var SvgIcon = (function () {
+                    function SvgIcon(el) {
+                        this.viewBoxSize = 24;
+                        this.setElement(el);
+                    }
+                    SvgIcon.prototype.setElement = function (el) {
+                        if (el && el.tagName != 'svg') {
+                            el = angular.element('<svg xmlns="http://www.w3.org/2000/svg">').append(el)[0];
+                        }
+                        if (!el.getAttribute('xmlns')) {
+                            el.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+                        }
+                        this.element = el;
+                        return this;
+                    };
+                    SvgIcon.prototype.setViewBoxSize = function (viewBoxSize) {
+                        this.viewBoxSize = viewBoxSize;
+                        return this;
+                    };
+                    SvgIcon.prototype.prepareAndStyle = function () {
+                        angular.forEach({
+                            'fit': '',
+                            'height': '100%',
+                            'width': '100%',
+                            'preserveAspectRatio': 'xMidYMid meet',
+                            'viewBox': this.element.getAttribute('viewBox') || ('0 0 ' + this.viewBoxSize + ' ' + this.viewBoxSize)
+                        }, function (val, attr) {
+                            this.element.setAttribute(attr, val);
+                        }, this);
+                    };
+                    SvgIcon.prototype.cloneSVG = function () {
+                        return this.element.cloneNode(true);
+                    };
+                    return SvgIcon;
+                })();
+                SvgIcon_1.SvgIcon = SvgIcon;
+            })(SvgIcon = UI.SvgIcon || (UI.SvgIcon = {}));
+        })(UI = App.UI || (App.UI = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var UI;
+        (function (UI) {
+            var SvgIcon;
+            (function (SvgIcon) {
+                var SvgIconDirective = (function () {
+                    function SvgIconDirective(svgIconService) {
+                        var _this = this;
+                        this.svgIconService = svgIconService;
+                        this.restrict = 'A';
+                        this.link = function (scope, element, attr) {
+                            var attrName = attr.$normalize(attr.$attr.svgIcon || '');
+                            if (attrName) {
+                                attr.$observe(attrName, function (attrVal) {
+                                    element.empty();
+                                    if (attrVal) {
+                                        _this.svgIconService.getIcon(attrVal)
+                                            .then(function (svg) {
+                                            element.empty();
+                                            element.append(svg);
+                                        });
+                                    }
+                                });
+                            }
+                        };
+                    }
+                    return SvgIconDirective;
+                })();
+                SvgIcon.SvgIconDirective = SvgIconDirective;
+            })(SvgIcon = UI.SvgIcon || (UI.SvgIcon = {}));
+        })(UI = App.UI || (App.UI = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="SvgIcon.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var UI;
+        (function (UI) {
+            var SvgIcon;
+            (function (SvgIcon) {
+                var SvgIconService = (function () {
+                    function SvgIconService(iconRegistry, $http, $q, $log, $templateCache) {
+                        this.iconRegistry = iconRegistry;
+                        this.$http = $http;
+                        this.$q = $q;
+                        this.$log = $log;
+                        this.$templateCache = $templateCache;
+                        this.iconCache = new TSCore.Data.Dictionary();
+                    }
+                    SvgIconService.prototype.preloadIcons = function (ids) {
+                        var _this = this;
+                        var promises = _.map(ids, function (id) {
+                            return _this.getIcon(id);
+                        });
+                        return this.$q.all(promises);
+                    };
+                    SvgIconService.prototype.getIcon = function (id) {
+                        var _this = this;
+                        if (this.iconCache.contains(id)) {
+                            return this.$q.when(this.iconCache.get(id));
+                        }
+                        var url;
+                        if (this.iconRegistry.contains(id)) {
+                            url = this.iconRegistry.get(id);
+                        }
+                        if (SvgIconService.URL_REGEX.test(url)) {
+                            return this.loadByURL(url).then(function (icon) {
+                                _this.cacheIcon(id, icon);
+                                return icon;
+                            });
+                        }
+                        return this.$q.reject();
+                    };
+                    SvgIconService.prototype.instant = function (id) {
+                        if (this.iconCache.contains(id)) {
+                            return this.iconCache.get(id);
+                        }
+                        return null;
+                    };
+                    SvgIconService.prototype.loadByURL = function (url) {
+                        return this.$http
+                            .get(url, {
+                            templateCache: this.$templateCache
+                        })
+                            .then(function (response) {
+                            return angular.element('<div>').append(response.data).find('svg')[0];
+                        }).catch(this.announceNotFound);
+                    };
+                    SvgIconService.prototype.announceNotFound = function (err) {
+                        var msg = angular.isString(err) ? err : (err.message || err.data || err.statusText);
+                        this.$log.warn(msg);
+                        return this.$q.reject(msg);
+                    };
+                    SvgIconService.prototype.cacheIcon = function (id, icon) {
+                        var svgIcon = new SvgIcon.SvgIcon(icon);
+                        svgIcon.prepareAndStyle();
+                        var cloned = svgIcon.cloneSVG();
+                        this.iconCache.set(id, cloned);
+                        return cloned;
+                    };
+                    SvgIconService.URL_REGEX = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/i;
+                    return SvgIconService;
+                })();
+                SvgIcon.SvgIconService = SvgIconService;
+            })(SvgIcon = UI.SvgIcon || (UI.SvgIcon = {}));
+        })(UI = App.UI || (App.UI = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+///<reference path="SvgIconService.ts"/>
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var UI;
+        (function (UI) {
+            var SvgIcon;
+            (function (SvgIcon) {
+                var SvgIconProvider = (function () {
+                    function SvgIconProvider() {
+                        var _this = this;
+                        this.defaultViewBoxSize = 24;
+                        this.iconRegistry = new TSCore.Data.Dictionary();
+                        this.$get = ['$http', '$q', '$log', '$templateCache', function ($http, $q, $log, $templateCache) {
+                                return new SvgIcon.SvgIconService(_this.iconRegistry, $http, $q, $log, $templateCache);
+                            }];
+                    }
+                    SvgIconProvider.prototype.icon = function (id, path) {
+                        this.iconRegistry.set(id, path);
+                        return this;
+                    };
+                    return SvgIconProvider;
+                })();
+                SvgIcon.SvgIconProvider = SvgIconProvider;
+            })(SvgIcon = UI.SvgIcon || (UI.SvgIcon = {}));
+        })(UI = App.UI || (App.UI = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var UI;
+        (function (UI) {
             var View = (function () {
                 function View() {
                     this.tagName = 'div';
@@ -2293,5 +2483,9 @@ var TSCore;
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIcon.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconDirective.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconProvider.ts" />
+/// <reference path="TSCore/App/UI/SvgIcon/SvgIconService.ts" />
 /// <reference path="TSCore/App/UI/View.ts" />
 //# sourceMappingURL=ts-core-app.js.map
