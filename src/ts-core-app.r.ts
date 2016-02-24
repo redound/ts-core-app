@@ -34,6 +34,7 @@
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
+/// <reference path="TSCore/App/UI/KeyCodes.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIcon.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIconDirective.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIconProvider.ts" />

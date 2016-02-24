@@ -616,6 +616,14 @@ declare module TSCore.App {
         getTransformer(): ITransformer;
     }
 }
+declare module TSCore.App.UI.KeyCodes {
+    const TAB: number;
+    const ENTER: number;
+    const ARROW_LEFT: number;
+    const ARROW_UP: number;
+    const ARROW_RIGHT: number;
+    const ARROW_DOWN: number;
+}
 declare module TSCore.App.UI.SvgIcon {
     class SvgIcon {
         element: HTMLElement;

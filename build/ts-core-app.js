@@ -2171,6 +2171,24 @@ var TSCore;
     (function (App) {
         var UI;
         (function (UI) {
+            var KeyCodes;
+            (function (KeyCodes) {
+                KeyCodes.TAB = 9;
+                KeyCodes.ENTER = 13;
+                KeyCodes.ARROW_LEFT = 37;
+                KeyCodes.ARROW_UP = 38;
+                KeyCodes.ARROW_RIGHT = 39;
+                KeyCodes.ARROW_DOWN = 40;
+            })(KeyCodes = UI.KeyCodes || (UI.KeyCodes = {}));
+        })(UI = App.UI || (App.UI = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var UI;
+        (function (UI) {
             var SvgIcon;
             (function (SvgIcon_1) {
                 var SvgIcon = (function () {
@@ -2483,6 +2501,7 @@ var TSCore;
 /// <reference path="TSCore/App/Http/RequestOptions.ts" />
 /// <reference path="TSCore/App/Http/Service.ts" />
 /// <reference path="TSCore/App/Resource.ts" />
+/// <reference path="TSCore/App/UI/KeyCodes.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIcon.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIconDirective.ts" />
 /// <reference path="TSCore/App/UI/SvgIcon/SvgIconProvider.ts" />
