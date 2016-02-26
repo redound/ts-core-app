@@ -2173,12 +2173,23 @@ var TSCore;
         (function (UI) {
             var KeyCodes;
             (function (KeyCodes) {
+                KeyCodes.BACKSPACE = 8;
                 KeyCodes.TAB = 9;
                 KeyCodes.ENTER = 13;
-                KeyCodes.ARROW_LEFT = 37;
-                KeyCodes.ARROW_UP = 38;
-                KeyCodes.ARROW_RIGHT = 39;
-                KeyCodes.ARROW_DOWN = 40;
+                KeyCodes.ESCAPE = 27;
+                KeyCodes.SPACE = 32;
+                KeyCodes.PAGE_UP = 33;
+                KeyCodes.PAGE_DOWN = 34;
+                KeyCodes.END = 35;
+                KeyCodes.HOME = 36;
+                KeyCodes.LEFT = 37;
+                KeyCodes.UP = 38;
+                KeyCodes.RIGHT = 39;
+                KeyCodes.DOWN = 40;
+                KeyCodes.DELETE = 46;
+                KeyCodes.V = 86;
+                KeyCodes.COMMA = 188;
+                KeyCodes.PERIOD = 190;
             })(KeyCodes = UI.KeyCodes || (UI.KeyCodes = {}));
         })(UI = App.UI || (App.UI = {}));
     })(App = TSCore.App || (TSCore.App = {}));

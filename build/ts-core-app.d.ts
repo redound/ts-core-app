@@ -617,12 +617,23 @@ declare module TSCore.App {
     }
 }
 declare module TSCore.App.UI.KeyCodes {
+    const BACKSPACE: number;
     const TAB: number;
     const ENTER: number;
-    const ARROW_LEFT: number;
-    const ARROW_UP: number;
-    const ARROW_RIGHT: number;
-    const ARROW_DOWN: number;
+    const ESCAPE: number;
+    const SPACE: number;
+    const PAGE_UP: number;
+    const PAGE_DOWN: number;
+    const END: number;
+    const HOME: number;
+    const LEFT: number;
+    const UP: number;
+    const RIGHT: number;
+    const DOWN: number;
+    const DELETE: number;
+    const V: number;
+    const COMMA: number;
+    const PERIOD: number;
 }
 declare module TSCore.App.UI.SvgIcon {
     class SvgIcon {
