@@ -14,10 +14,28 @@ module TSCore.App.Data.Model {
         protected _flags: TSCore.Data.Collection<ActiveModelFlag> = new TSCore.Data.Collection<ActiveModelFlag>();
 
         protected _dataService: TSCore.App.Data.Service;
+
         protected _resourceName: string;
 
         protected _savedData: any;
 
+        protected _errorMessages:TSCore.Data.Collection<TSValidate.MessageInterface> = new TSCore.Data.Collection<TSValidate.MessageInterface>();
+
+        protected validate(validation: TSValidate.Validation): this {
+
+            this._errorMessages = validation.validate(null, this);
+
+            return this;
+        }
+
+        public validationHasFailed(): boolean {
+
+            if (_.isArray(this._errorMessages)) {
+                return this._errorMessages.count() > 0;
+            }
+
+            return false;
+        }
 
         public activate(dataService: TSCore.App.Data.Service, resourceName: string)
         {

@@ -66,7 +66,7 @@ module TSCore.App.UI.SvgIcon {
 
             return this.$http
                 .get(url, {
-                    templateCache: this.$templateCache
+                    cache: this.$templateCache
                 })
                 .then((response:any) => {
                     return angular.element('<div>').append(response.data).find('svg')[0];

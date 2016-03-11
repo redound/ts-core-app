@@ -17,6 +17,7 @@ module.exports = function(config) {
     files: [
       'node_modules/ts-core/build/ts-core.js',
       'node_modules/underscore/underscore.js',
+      'bower_components/ts-validate/build/ts-validate.js',
       'build/ts-core-app.js',
       'test/ts-core-app.spec.js'
     ],

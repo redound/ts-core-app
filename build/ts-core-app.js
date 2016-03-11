@@ -142,7 +142,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="Reference.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -383,10 +382,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="Graph/Reference.ts"/>
-///<reference path="Graph/Graph.ts"/>
-///<reference path="../Data/Query/Query.ts"/>
-///<reference path="../Data/IDataSourceResponse.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -427,8 +422,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="ConditionType.ts"/>
-///<reference path="ConditionOperator.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -494,9 +487,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../IDataSource.ts"/>
-///<reference path="../Query/Condition.ts"/>
-///<reference path="../Query/Sorter.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -711,8 +701,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../Data/Query/Query.ts"/>
-///<reference path="../Data/Query/IQueryExecutor.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -802,11 +790,6 @@ var TSCore;
         })(Api = App.Api || (App.Api = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../Http/RequestOptions.ts"/>
-///<reference path="../Data/Query/Query.ts"/>
-///<reference path="../Data/Query/IQueryExecutor.ts"/>
-///<reference path="./Service.ts"/>
-///<reference path="./IRequestHandlerPlugin.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -926,14 +909,10 @@ var TSCore;
         })(Api = App.Api || (App.Api = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="./RequestHandler.ts"/>
-///<reference path="../Http/RequestOptions.ts"/>
-///<reference path="../Data/Query/Query.ts"/>
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var TSCore;
 (function (TSCore) {
@@ -992,11 +971,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../Data/Transformer.ts"/>
-///<reference path="../../Data/Query/Query.ts"/>
-///<reference path="../../Http/RequestOptions.ts"/>
-///<reference path="../RequestHandler.ts"/>
-///<reference path="../IRequestHandlerPlugin.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1021,9 +995,6 @@ var TSCore;
         })(Api = App.Api || (App.Api = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../../Data/Query/Query.ts"/>
-///<reference path="../../Http/RequestOptions.ts"/>
-///<reference path="../RequestHandler.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1242,7 +1213,18 @@ var TSCore;
                     function ActiveModel() {
                         _super.apply(this, arguments);
                         this._flags = new TSCore.Data.Collection();
+                        this._errorMessages = new TSCore.Data.Collection();
                     }
+                    ActiveModel.prototype.validate = function (validation) {
+                        this._errorMessages = validation.validate(null, this);
+                        return this;
+                    };
+                    ActiveModel.prototype.validationHasFailed = function () {
+                        if (_.isArray(this._errorMessages)) {
+                            return this._errorMessages.count() > 0;
+                        }
+                        return false;
+                    };
                     ActiveModel.prototype.activate = function (dataService, resourceName) {
                         this._dataService = dataService;
                         this._resourceName = resourceName;
@@ -1320,10 +1302,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="Model/ActiveModel.ts"/>
-///<reference path="Query/Query.ts"/>
-///<reference path="IDataSource.ts"/>
-///<reference path="IDataSourceResponse.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1602,7 +1580,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="Graph.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1700,12 +1677,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../IDataSource.ts"/>
-///<reference path="../Query/Query.ts"/>
-///<reference path="../Query/IQueryExecutor.ts"/>
-///<reference path="../Service.ts"/>
-///<reference path="../Graph/Builder.ts"/>
-///<reference path="../Graph/Reference.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -1877,9 +1848,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="../IDataSource.ts"/>
-///<reference path="../Query/Query.ts"/>
-///<reference path="../Graph/Graph.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -2066,7 +2034,6 @@ var TSCore;
         })(Data = App.Data || (App.Data = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="./RequestOptions.ts" />
 var TSCore;
 (function (TSCore) {
     var App;
@@ -2109,8 +2076,6 @@ var TSCore;
         })(Http = App.Http || (App.Http = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="Api/RequestHandler.ts" />
-/// <reference path="Data/Transformer.ts" />
 var TSCore;
 (function (TSCore) {
     var App;
@@ -2278,7 +2243,6 @@ var TSCore;
         })(UI = App.UI || (App.UI = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="SvgIcon.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -2329,7 +2293,7 @@ var TSCore;
                     SvgIconService.prototype.loadByURL = function (url) {
                         return this.$http
                             .get(url, {
-                            templateCache: this.$templateCache
+                            cache: this.$templateCache
                         })
                             .then(function (response) {
                             return angular.element('<div>').append(response.data).find('svg')[0];
@@ -2355,7 +2319,6 @@ var TSCore;
         })(UI = App.UI || (App.UI = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-///<reference path="SvgIconService.ts"/>
 var TSCore;
 (function (TSCore) {
     var App;
@@ -2478,44 +2441,4 @@ var TSCore;
         })(UI = App.UI || (App.UI = {}));
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
-/// <reference path="../../ts-core/build/ts-core.d.ts" />
-/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="TSCore/App/Api/IRequestHandlerPlugin.ts" />
-/// <reference path="TSCore/App/Api/IResource.ts" />
-/// <reference path="TSCore/App/Api/RequestHandler.ts" />
-/// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
-/// <reference path="TSCore/App/Api/RequestHandlerPlugins/OffsetRequestHandlerPlugin.ts" />
-/// <reference path="TSCore/App/Api/Service.ts" />
-/// <reference path="TSCore/App/App.ts" />
-/// <reference path="TSCore/App/Auth/AccountType.ts" />
-/// <reference path="TSCore/App/Auth/Manager.ts" />
-/// <reference path="TSCore/App/Auth/Session.ts" />
-/// <reference path="TSCore/App/Constants/HttpMethods.ts" />
-/// <reference path="TSCore/App/Data/DataSources/ApiDataSource.ts" />
-/// <reference path="TSCore/App/Data/DataSources/MemoryDataSource.ts" />
-/// <reference path="TSCore/App/Data/Graph/Builder.ts" />
-/// <reference path="TSCore/App/Data/Graph/Graph.ts" />
-/// <reference path="TSCore/App/Data/Graph/Reference.ts" />
-/// <reference path="TSCore/App/Data/IDataSource.ts" />
-/// <reference path="TSCore/App/Data/IDataSourceResponse.ts" />
-/// <reference path="TSCore/App/Data/IResource.ts" />
-/// <reference path="TSCore/App/Data/Model/ActiveModel.ts" />
-/// <reference path="TSCore/App/Data/Query/Condition.ts" />
-/// <reference path="TSCore/App/Data/Query/ConditionOperator.ts" />
-/// <reference path="TSCore/App/Data/Query/ConditionType.ts" />
-/// <reference path="TSCore/App/Data/Query/IQueryExecutor.ts" />
-/// <reference path="TSCore/App/Data/Query/Query.ts" />
-/// <reference path="TSCore/App/Data/Query/Sorter.ts" />
-/// <reference path="TSCore/App/Data/ResourceDelegate.ts" />
-/// <reference path="TSCore/App/Data/Service.ts" />
-/// <reference path="TSCore/App/Data/Transformer.ts" />
-/// <reference path="TSCore/App/Http/RequestOptions.ts" />
-/// <reference path="TSCore/App/Http/Service.ts" />
-/// <reference path="TSCore/App/Resource.ts" />
-/// <reference path="TSCore/App/UI/KeyCodes.ts" />
-/// <reference path="TSCore/App/UI/SvgIcon/SvgIcon.ts" />
-/// <reference path="TSCore/App/UI/SvgIcon/SvgIconDirective.ts" />
-/// <reference path="TSCore/App/UI/SvgIcon/SvgIconProvider.ts" />
-/// <reference path="TSCore/App/UI/SvgIcon/SvgIconService.ts" />
-/// <reference path="TSCore/App/UI/View.ts" />
 //# sourceMappingURL=ts-core-app.js.map

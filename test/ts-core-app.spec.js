@@ -1,10 +1,8 @@
-/// <reference path="../../build/ts-core-app.d.ts" />
 describe("TSCore.App", function () {
     it("test should work", function () {
         expect(true).toEqual(true);
     });
 });
-/// <reference path="../../TSCore.spec.ts" />
 var Graph = TSCore.App.Data.Graph.Graph;
 describe("TSCore.App.Data.JsonGraph", function () {
     var graph;
@@ -64,7 +62,6 @@ describe("TSCore.App.Data.JsonGraph", function () {
         graph.clear();
     });
 });
-/// <reference path="../../../TSCore.spec.ts" />
 var Query = TSCore.App.Data.Query.Query;
 var Condition = TSCore.App.Data.Query.Condition;
 var ConditionType = TSCore.App.Data.Query.ConditionType;

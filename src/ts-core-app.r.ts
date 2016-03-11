@@ -1,5 +1,6 @@
-/// <reference path="../../ts-core/build/ts-core.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
+/// <reference path="../node_modules/ts-core/build/ts-core.d.ts" />
+/// <reference path="../node_modules/ts-validate/build/ts-validate.d.ts" />
 
 //grunt-start
 /// <reference path="TSCore/App/Api/IRequestHandlerPlugin.ts" />

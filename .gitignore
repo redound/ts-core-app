@@ -2,5 +2,6 @@
 .tscache
 typings
 node_modules
+bower_components
 coverage/**
 .coveralls.yml

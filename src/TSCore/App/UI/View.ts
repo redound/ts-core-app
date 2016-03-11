@@ -57,7 +57,7 @@ module TSCore.App.UI {
          * to populate its element (`this.el`), with the appropriate HTML. The
          * convention is for **render** to always return `this`.
          */
-        public render(): View {
+        public render(): this {
             return this;
         }
 
@@ -65,7 +65,7 @@ module TSCore.App.UI {
          * Remove this view by taking the element out of the DOM, and removing any
          * applicable event listeners
          */
-        public remove() {
+        public remove(): this {
             this._removeElement();
             return this;
         }

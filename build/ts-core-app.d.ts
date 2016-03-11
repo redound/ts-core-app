@@ -1,4 +1,3 @@
-/// <reference path="../../ts-core/build/ts-core.d.ts" />
 declare module TSCore.App.Http {
     class RequestOptions {
         protected _headers: ng.IHttpRequestConfigHeaders;
@@ -7,21 +6,21 @@ declare module TSCore.App.Http {
         protected _data: {};
         protected _options: {};
         protected _params: {};
-        header(name: any, value: any): RequestOptions;
-        removeHeader(name: any): RequestOptions;
+        header(name: any, value: any): this;
+        removeHeader(name: any): this;
         getHeaders(): ng.IHttpRequestConfigHeaders;
-        method(method: string): RequestOptions;
+        method(method: string): this;
         getMethod(): string;
-        url(url: string, params?: {}): RequestOptions;
+        url(url: string, params?: {}): this;
         private _interpolateUrl(url, params?);
         private _popFirstKey(source, key);
         private _popKey(object, key);
         getUrl(): string;
-        data(data: {}): RequestOptions;
+        data(data: {}): this;
         getData(): {};
-        option(name: string, value?: any): RequestOptions;
+        option(name: string, value?: any): this;
         getOptions(): {};
-        param(name: string, value?: any): RequestOptions;
+        param(name: string, value?: any): this;
         getParams(): any;
         getRequestConfig(): ng.IRequestConfig;
         static factory(): RequestOptions;
@@ -52,8 +51,8 @@ declare module TSCore.App.Data.Graph {
         getGraphForReferences(references: Reference[]): Graph;
         _getValueForPath(path: any): any;
         protected _optimizePath(path?: any[]): any[];
-        set(path: any[], value: any): Graph;
-        unset(path: any[]): Graph;
+        set(path: any[], value: any): this;
+        unset(path: any[]): this;
         hasItem(resourceName: string, resourceId: any): boolean;
         setItem(resourceName: string, resourceId: any, resource: any): void;
         getItem(resourceName: string, resourceId: any): any;
@@ -334,11 +333,11 @@ declare module TSCore.App.Auth {
         protected _session: Session;
         static $inject: string[];
         constructor($q: ng.IQService);
-        registerAccountType(name: any, account: AccountType): Manager;
+        registerAccountType(name: any, account: AccountType): this;
         getAccountTypes(): TSCore.Data.Dictionary<any, AccountType>;
         getSession(): Session;
         setSession(session: Session): void;
-        clearSession(): Manager;
+        clearSession(): this;
         loggedIn(): boolean;
         getAccountType(name: any): AccountType;
         login(accountTypeName: any, credentials: {}): ng.IPromise<Session>;
@@ -391,6 +390,9 @@ declare module TSCore.App.Data.Model {
         protected _dataService: TSCore.App.Data.Service;
         protected _resourceName: string;
         protected _savedData: any;
+        protected _errorMessages: TSCore.Data.Collection<TSValidate.MessageInterface>;
+        protected validate(validation: TSValidate.Validation): this;
+        validationHasFailed(): boolean;
         activate(dataService: TSCore.App.Data.Service, resourceName: string): void;
         deactivate(): void;
         setSavedData(data: any): void;
@@ -428,10 +430,10 @@ declare module TSCore.App.Data {
         protected _resources: TSCore.Data.Dictionary<string, IResource>;
         protected _resourceDelegateCache: TSCore.Data.Dictionary<string, ResourceDelegate<Model>>;
         constructor($q: ng.IQService);
-        source(source: IDataSource): Service;
+        source(source: IDataSource): this;
         getSources(): List<IDataSource>;
         setResources(resources: TSCore.Data.Dictionary<string, IResource>): Service;
-        resource(name: string, resource: IResource): Service;
+        resource(name: string, resource: IResource): this;
         getResources(): TSCore.Data.Dictionary<string, IResource>;
         getResource(name: string): IResource;
         getResourceAsync(name: string): ng.IPromise<Resource>;
@@ -693,15 +695,15 @@ declare module TSCore.App.UI {
         constructor();
         $(selector: any): JQuery;
         initialize(): void;
-        render(): View;
-        remove(): View;
+        render(): this;
+        remove(): this;
         private _removeElement();
         setElement(element: JQuery | HTMLElement): View;
         protected _setElement(el: JQuery | HTMLElement): void;
-        delegateEvents(events?: any): View;
-        delegate(eventName: string, selector: string, listener: any): View;
-        undelegateEvents(): View;
-        undelegate(eventName: string, selector: string, listener: any): View;
+        delegateEvents(events?: any): this;
+        delegate(eventName: string, selector: string, listener: any): this;
+        undelegateEvents(): this;
+        undelegate(eventName: string, selector: string, listener: any): this;
         protected _createElement(tagName: string): HTMLElement;
         protected _ensureElement(): void;
         protected _setAttributes(attributes: any): void;
