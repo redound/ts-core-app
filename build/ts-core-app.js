@@ -1216,8 +1216,7 @@ var TSCore;
                         this._errorMessages = new TSCore.Data.Collection();
                     }
                     ActiveModel.prototype.validate = function (validation) {
-                        this._errorMessages = validation.validate(null, this);
-                        return this;
+                        return this._errorMessages = validation.validate(null, this);
                     };
                     ActiveModel.prototype.validationHasFailed = function () {
                         if (_.isArray(this._errorMessages)) {
@@ -1229,6 +1228,9 @@ var TSCore;
                         this._dataService = dataService;
                         this._resourceName = resourceName;
                         this._flags.addMany([ActiveModelFlag.ACTIVATED, ActiveModelFlag.CREATED]);
+                    };
+                    ActiveModel.prototype.getMessages = function () {
+                        return this._errorMessages;
                     };
                     ActiveModel.prototype.deactivate = function () {
                         this._dataService = null;
@@ -1281,6 +1283,24 @@ var TSCore;
                     };
                     ActiveModel.prototype.isDirty = function () {
                         return !this._savedData || !this.equals(this._savedData);
+                    };
+                    ActiveModel.prototype.isValid = function (field) {
+                        if (this['validation']) {
+                            var messages = this['validation']();
+                            var valid = true;
+                            if (field) {
+                                messages.each(function (message) {
+                                    if (message.getField() === field) {
+                                        valid = false;
+                                    }
+                                });
+                                return valid;
+                            }
+                            else {
+                                return !!messages.count();
+                            }
+                        }
+                        return true;
                     };
                     ActiveModel.prototype.getResourceIdentifier = function () {
                         if (!this._resourceName && !this.getId()) {

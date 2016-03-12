@@ -391,9 +391,10 @@ declare module TSCore.App.Data.Model {
         protected _resourceName: string;
         protected _savedData: any;
         protected _errorMessages: TSCore.Data.Collection<TSValidate.MessageInterface>;
-        protected validate(validation: TSValidate.Validation): this;
+        protected validate(validation: TSValidate.Validation): TSCore.Data.Collection<TSValidate.MessageInterface>;
         validationHasFailed(): boolean;
         activate(dataService: TSCore.App.Data.Service, resourceName: string): void;
+        getMessages(): TSCore.Data.Collection<TSValidate.MessageInterface>;
         deactivate(): void;
         setSavedData(data: any): void;
         markRemoved(): void;
@@ -405,6 +406,7 @@ declare module TSCore.App.Data.Model {
         isCreated(): boolean;
         isRemoved(): boolean;
         isDirty(): boolean;
+        isValid(field?: string): boolean;
         getResourceIdentifier(): string;
     }
 }

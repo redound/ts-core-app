@@ -21,11 +21,9 @@ module TSCore.App.Data.Model {
 
         protected _errorMessages:TSCore.Data.Collection<TSValidate.MessageInterface> = new TSCore.Data.Collection<TSValidate.MessageInterface>();
 
-        protected validate(validation: TSValidate.Validation): this {
+        protected validate(validation: TSValidate.Validation): TSCore.Data.Collection<TSValidate.MessageInterface> {
 
-            this._errorMessages = validation.validate(null, this);
-
-            return this;
+            return this._errorMessages = validation.validate(null, this);
         }
 
         public validationHasFailed(): boolean {
@@ -43,6 +41,11 @@ module TSCore.App.Data.Model {
             this._resourceName = resourceName;
 
             this._flags.addMany([ActiveModelFlag.ACTIVATED, ActiveModelFlag.CREATED]);
+        }
+
+        public getMessages() {
+
+            return this._errorMessages;
         }
 
         public deactivate()
@@ -127,6 +130,33 @@ module TSCore.App.Data.Model {
         public isDirty(): boolean
         {
             return !this._savedData || !this.equals(this._savedData);
+        }
+
+        public isValid(field?: string) {
+
+            if (this['validation']) {
+                var messages: TSCore.Data.Collection<TSValidate.Message> = this['validation']();
+
+                var valid = true;
+
+                if (field) {
+
+                    messages.each(message => {
+
+                        if (message.getField() === field) {
+                            valid = false;
+                        }
+                    });
+
+                    return valid;
+
+                } else {
+
+                    return !!messages.count();
+                }
+            }
+
+            return true;
         }
 
         public getResourceIdentifier(): string
