@@ -1240,6 +1240,9 @@ var TSCore;
                     ActiveModel.prototype.setSavedData = function (data) {
                         this._savedData = data;
                     };
+                    ActiveModel.prototype.makeSnapshot = function () {
+                        this.setSavedData(this.toObject());
+                    };
                     ActiveModel.prototype.markRemoved = function () {
                         this._flags.add(ActiveModelFlag.REMOVED);
                     };
@@ -1281,7 +1284,10 @@ var TSCore;
                     ActiveModel.prototype.isRemoved = function () {
                         return this._flags.contains(ActiveModelFlag.REMOVED);
                     };
-                    ActiveModel.prototype.isDirty = function () {
+                    ActiveModel.prototype.isDirty = function (field) {
+                        if (field) {
+                            return this[field] != this._savedData[field];
+                        }
                         return !this._savedData || !this.equals(this._savedData);
                     };
                     ActiveModel.prototype.isValid = function (field) {

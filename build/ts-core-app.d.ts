@@ -397,6 +397,7 @@ declare module TSCore.App.Data.Model {
         getMessages(): TSCore.Data.Collection<TSValidate.MessageInterface>;
         deactivate(): void;
         setSavedData(data: any): void;
+        makeSnapshot(): void;
         markRemoved(): void;
         update(data?: any): ng.IPromise<void>;
         create(dataService: TSCore.App.Data.Service, resourceName: string, data?: any): ng.IPromise<any>;
@@ -405,7 +406,7 @@ declare module TSCore.App.Data.Model {
         isActivated(): boolean;
         isCreated(): boolean;
         isRemoved(): boolean;
-        isDirty(): boolean;
+        isDirty(field?: string): boolean;
         isValid(field?: string): boolean;
         getResourceIdentifier(): string;
     }

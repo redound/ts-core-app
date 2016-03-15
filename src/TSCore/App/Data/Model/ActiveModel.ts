@@ -61,6 +61,10 @@ module TSCore.App.Data.Model {
             this._savedData = data;
         }
 
+        public makeSnapshot() {
+            this.setSavedData(this.toObject());
+        }
+
         public markRemoved()
         {
             this._flags.add(ActiveModelFlag.REMOVED);
@@ -127,8 +131,12 @@ module TSCore.App.Data.Model {
             return this._flags.contains(ActiveModelFlag.REMOVED);
         }
 
-        public isDirty(): boolean
+        public isDirty(field?: string): boolean
         {
+            if (field) {
+                return this[field] != this._savedData[field];
+            }
+
             return !this._savedData || !this.equals(this._savedData);
         }
 
