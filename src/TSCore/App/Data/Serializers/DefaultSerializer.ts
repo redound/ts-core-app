@@ -108,9 +108,7 @@ module TSCore.App.Data.Serializers {
 
             var graph = new Graph();
 
-            this.extractResources(null, data, (resourceName, data: any, key) => {
-
-                console.log('resourceName', resourceName, 'data', data);
+            this.extractResources(null, data, (resourceName, data: any) => {
 
                 var resource = this.resources.get(resourceName);
                 var primaryKey = resource.getModel().primaryKey();
@@ -120,13 +118,11 @@ module TSCore.App.Data.Serializers {
 
             }, (parentResourceName, parentData, key, resourceName, data) => {
 
-                console.log('resourceName', resourceName, 'key', key, 'data', data);
-
                 var parentResource = this.resources.get(parentResourceName);
                 var parentPrimaryKey = parentResource.getModel().primaryKey();
                 var parentResourceId = parentData[parentPrimaryKey];
 
-                var parentItem = graph.getItem(parentResourceName, parentResourceId);
+                var parentItem = graph.getValue([parentResourceName, parentResourceId]);
 
                 var resource = this.resources.get(resourceName);
                 var primaryKey = resource.getModel().primaryKey();
@@ -151,26 +147,25 @@ module TSCore.App.Data.Serializers {
 
             _.each(data, (value: any, key: string) => {
 
-                if (!_.isArray(data) && this.resourceAliasMap.contains(key)) {
+                var resourceName = this.resourceAliasMap.get(key);
 
-                    var resourceName = this.resourceAliasMap.get(key);
-
-                    this.extractResources(parentResourceName, value, resourceCallback, referenceCallback);
+                if (!_.isArray(data) && resourceName) {
 
                     if (_.isArray(value)) {
-                        _.each(value, itemData => resourceCallback(resourceName, itemData));
+                        _.each(value, itemData => resourceCallback(resourceName, _.clone(itemData)));
                     }
                     else if (_.isObject(value)) {
-                        resourceCallback(resourceName, value);
+                        resourceCallback(resourceName, _.clone(value));
                     }
 
                     if (parentResourceName) {
-                        referenceCallback(parentResourceName, data, key, resourceName, value);
+                        referenceCallback(parentResourceName, _.clone(data), key, resourceName, _.clone(value));
                     }
 
+                    this.extractResources(resourceName, value, resourceCallback, referenceCallback);
                 }
                 else if (_.isObject(data)) {
-                    this.extractResources(null, value, resourceCallback, referenceCallback);
+                    this.extractResources(parentResourceName, value, resourceCallback, referenceCallback);
                 }
             });
         }

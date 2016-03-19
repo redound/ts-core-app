@@ -2016,18 +2016,16 @@ var TSCore;
                     DefaultSerializer.prototype.createGraph = function (data) {
                         var _this = this;
                         var graph = new Graph();
-                        this.extractResources(null, data, function (resourceName, data, key) {
-                            console.log('resourceName', resourceName, 'data', data);
+                        this.extractResources(null, data, function (resourceName, data) {
                             var resource = _this.resources.get(resourceName);
                             var primaryKey = resource.getModel().primaryKey();
                             var resourceId = data[primaryKey];
                             graph.setItem(resourceName, resourceId, data);
                         }, function (parentResourceName, parentData, key, resourceName, data) {
-                            console.log('resourceName', resourceName, 'key', key, 'data', data);
                             var parentResource = _this.resources.get(parentResourceName);
                             var parentPrimaryKey = parentResource.getModel().primaryKey();
                             var parentResourceId = parentData[parentPrimaryKey];
-                            var parentItem = graph.getItem(parentResourceName, parentResourceId);
+                            var parentItem = graph.getValue([parentResourceName, parentResourceId]);
                             var resource = _this.resources.get(resourceName);
                             var primaryKey = resource.getModel().primaryKey();
                             if (_.isArray(data)) {
@@ -2044,21 +2042,21 @@ var TSCore;
                     DefaultSerializer.prototype.extractResources = function (parentResourceName, data, resourceCallback, referenceCallback) {
                         var _this = this;
                         _.each(data, function (value, key) {
-                            if (!_.isArray(data) && _this.resourceAliasMap.contains(key)) {
-                                var resourceName = _this.resourceAliasMap.get(key);
-                                _this.extractResources(parentResourceName, value, resourceCallback, referenceCallback);
+                            var resourceName = _this.resourceAliasMap.get(key);
+                            if (!_.isArray(data) && resourceName) {
                                 if (_.isArray(value)) {
-                                    _.each(value, function (itemData) { return resourceCallback(resourceName, itemData); });
+                                    _.each(value, function (itemData) { return resourceCallback(resourceName, _.clone(itemData)); });
                                 }
                                 else if (_.isObject(value)) {
-                                    resourceCallback(resourceName, value);
+                                    resourceCallback(resourceName, _.clone(value));
                                 }
                                 if (parentResourceName) {
-                                    referenceCallback(parentResourceName, data, key, resourceName, value);
+                                    referenceCallback(parentResourceName, _.clone(data), key, resourceName, _.clone(value));
                                 }
+                                _this.extractResources(resourceName, value, resourceCallback, referenceCallback);
                             }
                             else if (_.isObject(data)) {
-                                _this.extractResources(null, value, resourceCallback, referenceCallback);
+                                _this.extractResources(parentResourceName, value, resourceCallback, referenceCallback);
                             }
                         });
                     };
