@@ -5,6 +5,7 @@
 //grunt-start
 /// <reference path="TSCore/App/Api/IRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/IResource.ts" />
+/// <reference path="TSCore/App/Api/ISerializer.ts" />
 /// <reference path="TSCore/App/Api/RequestHandler.ts" />
 /// <reference path="TSCore/App/Api/RequestHandlerPlugins/LimitRequestHandlerPlugin.ts" />
 /// <reference path="TSCore/App/Api/RequestHandlerPlugins/OffsetRequestHandlerPlugin.ts" />

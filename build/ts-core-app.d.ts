@@ -294,6 +294,11 @@ declare module TSCore.App.Api {
         getRequestHandler(): RequestHandler;
     }
 }
+declare module TSCore.Api {
+    interface ISerializer {
+        serialize(data: any): any;
+    }
+}
 declare module TSCore.App.Api.RequestHandlerPlugins {
     import RequestOptions = TSCore.App.Http.RequestOptions;
     import Query = TSCore.App.Data.Query.Query;
