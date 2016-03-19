@@ -1606,112 +1606,14 @@ var TSCore;
     (function (App) {
         var Data;
         (function (Data) {
-            var Graph;
-            (function (Graph) {
-                var Builder = (function () {
-                    function Builder() {
-                    }
-                    Builder.prototype.resourceForResourceName = function (callback) {
-                        this._resourceForResourceNameCallback = callback;
-                    };
-                    Builder.prototype.resourceNameForAlias = function (callback) {
-                        this._resourceNameForAliasCallback = callback;
-                    };
-                    Builder.prototype.build = function (data, rootResourceName) {
-                        var _this = this;
-                        if (rootResourceName === void 0) { rootResourceName = null; }
-                        var results = {};
-                        this._findResourcesRecursive(rootResourceName, data, function (resourceName, resource) {
-                            var rootResource = _this._resourceForResourceNameCallback(rootResourceName);
-                            var record = _.clone(resource);
-                            var childResources = {};
-                            _this._findResources(record, function (fromArray, childResourceName, childItem) {
-                                var childResource = _this._resourceForResourceNameCallback(childResourceName);
-                                var primaryKey = childResource.getModel().primaryKey();
-                                var id = childItem[primaryKey];
-                                var childResourceRef = new Graph.Reference(childResourceName, id);
-                                if (fromArray) {
-                                    childResources[childResourceName] = childResources[childResourceName] || [];
-                                    childResources[childResourceName].push(childResourceRef);
-                                }
-                                else {
-                                    childResources[childResourceName] = childResourceRef;
-                                }
-                            });
-                            _.each(childResources, function (childResource, childResourceName) {
-                                record[childResourceName] = childResource;
-                            });
-                            var primaryKey = rootResource.getModel().primaryKey();
-                            var id = record[primaryKey];
-                            results[resourceName] = results[resourceName] || {};
-                            results[resourceName][id] = record;
-                        });
-                        return new Graph.Graph(results);
-                    };
-                    Builder.prototype._findResourcesRecursive = function (alias, data, callback) {
-                        var _this = this;
-                        if (!_.isObject(data)) {
-                            return;
-                        }
-                        if (alias) {
-                            alias = alias.toString();
-                            var resourceName = this._resourceNameForAliasCallback(alias);
-                            if (resourceName) {
-                                if (_.isArray(data)) {
-                                    _.each(data, function (resource) { return callback(resourceName, resource); });
-                                }
-                                else {
-                                    callback(resourceName, data);
-                                }
-                            }
-                        }
-                        _.each(data, function (value, key) { return _this._findResourcesRecursive(key, value, callback); });
-                    };
-                    Builder.prototype._findResources = function (data, callback) {
-                        var _this = this;
-                        if (!_.isObject(data)) {
-                            return;
-                        }
-                        _.each(data, function (value, key) {
-                            if (!_.isObject(value)) {
-                                return;
-                            }
-                            if (key) {
-                                var alias = key.toString();
-                                var resourceName = _this._resourceNameForAliasCallback(alias);
-                                if (resourceName) {
-                                    if (_.isArray(value)) {
-                                        _.each(value, function (resource) { return callback(true, resourceName, resource); });
-                                    }
-                                    else {
-                                        callback(false, resourceName, value);
-                                    }
-                                }
-                            }
-                        });
-                    };
-                    return Builder;
-                })();
-                Graph.Builder = Builder;
-            })(Graph = Data.Graph || (Data.Graph = {}));
-        })(Data = App.Data || (App.Data = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Data;
-        (function (Data) {
             var DataSources;
             (function (DataSources) {
-                var Reference = TSCore.App.Data.Graph.Reference;
-                var Graph = TSCore.App.Data.Graph.Graph;
                 var Exception = TSCore.Exception.Exception;
                 var ApiDataSource = (function () {
-                    function ApiDataSource($q, apiService, logger) {
+                    function ApiDataSource($q, apiService, serializer, logger) {
                         this.$q = $q;
                         this.apiService = apiService;
+                        this.serializer = serializer;
                         this.logger = logger;
                         this.logger = (this.logger || new TSCore.Logger.Logger()).child('ApiDataSource');
                     }
@@ -1780,86 +1682,7 @@ var TSCore;
                         return transformer.transformRequest(data);
                     };
                     ApiDataSource.prototype._transformResponse = function (resourceName, response) {
-                        var _this = this;
-                        return this.getDataService()
-                            .getResourceAsync(resourceName)
-                            .then(function (resource) { return _this._createDataSourceResponse(resourceName, resource, response); });
-                    };
-                    ApiDataSource.prototype._createDataSourceResponse = function (resourceName, resource, response) {
-                        var total = response.data.total;
-                        var data = response.data.data;
-                        var included = response.data.included;
-                        var dataGraph = this._createGraph(data);
-                        var includedGraph = this._createGraph(included);
-                        dataGraph.merge(includedGraph);
-                        var meta = {};
-                        if (total) {
-                            meta.total = total;
-                        }
-                        return {
-                            meta: meta,
-                            graph: dataGraph,
-                            references: _.map(data, function (item) {
-                                return new Reference(resourceName, item.id);
-                            })
-                        };
-                    };
-                    ApiDataSource.prototype._createGraph = function (data) {
-                        var _this = this;
-                        var graph = new Graph();
-                        this._extractResource(data, function (resourceName, resourceId, attributes, relationships) {
-                            var resource = _this.getDataService().getResource(resourceName);
-                            if (!resource) {
-                                throw new Exception('Resource `' + resourceName + '` could not be found!');
-                            }
-                            var transformer = resource.getTransformer();
-                            var model = resource.getModel();
-                            var primaryKey = model.primaryKey();
-                            attributes[primaryKey] = parseInt(resourceId);
-                            var item = attributes;
-                            item = transformer.item(attributes);
-                            _.each(relationships, function (relationship, propertyName) {
-                                if (_.isArray(relationship.data)) {
-                                    item[propertyName] = _.map(relationship.data, function (ref) {
-                                        var resourceName = ref.type;
-                                        var resourceId = ref.id;
-                                        return new Reference(resourceName, resourceId);
-                                    });
-                                    return;
-                                }
-                                if (_.isObject(relationship.data)) {
-                                    var ref = relationship.data;
-                                    var resourceName = ref.type;
-                                    var resourceId = ref.id;
-                                    item[propertyName] = new Reference(resourceName, resourceId);
-                                    return;
-                                }
-                                item[propertyName] = relationship.data;
-                            });
-                            graph.setItem(resourceName, resourceId, item);
-                        });
-                        return graph;
-                    };
-                    ApiDataSource.prototype._extractResource = function (results, callback) {
-                        if (_.isArray(results)) {
-                            _.each(results, function (result) { return callback(result.type, result.id, result.attributes, result.relationships); });
-                        }
-                        else if (_.isObject(results)) {
-                            callback(results.type, results.id, results.attributes, results.relationships);
-                        }
-                    };
-                    ApiDataSource.prototype._getResourcesAliasMap = function () {
-                        var _this = this;
-                        if (this._resourceAliasMap) {
-                            return this._resourceAliasMap;
-                        }
-                        this._resourceAliasMap = new TSCore.Data.Dictionary();
-                        var resources = this.getDataService().getResources();
-                        resources.each(function (resourceName, resource) {
-                            _this._resourceAliasMap.set(resource.getSingleKey(), resourceName);
-                            _this._resourceAliasMap.set(resource.getMultipleKey(), resourceName);
-                        });
-                        return this._resourceAliasMap;
+                        return this.serializer.deserialize(resourceName, response);
                     };
                     return ApiDataSource;
                 })();
@@ -2058,6 +1881,284 @@ var TSCore;
 (function (TSCore) {
     var App;
     (function (App) {
+        var Resource = (function () {
+            function Resource() {
+                this._itemKeys = new TSCore.Data.Collection();
+                this._collectionKeys = new TSCore.Data.Collection();
+            }
+            Resource.prototype.prefix = function (prefix) {
+                this._prefix = prefix;
+                return this;
+            };
+            Resource.prototype.getPrefix = function () {
+                return this._prefix;
+            };
+            Resource.prototype.itemKey = function () {
+                var itemKeys = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    itemKeys[_i - 0] = arguments[_i];
+                }
+                this._itemKeys.addMany(itemKeys);
+                return this;
+            };
+            Resource.prototype.getItemKeys = function () {
+                return this._itemKeys;
+            };
+            Resource.prototype.collectionKey = function () {
+                var collectionKeys = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    collectionKeys[_i - 0] = arguments[_i];
+                }
+                this._collectionKeys.addMany(collectionKeys);
+                return this;
+            };
+            Resource.prototype.getCollectionKeys = function () {
+                return this._collectionKeys;
+            };
+            Resource.prototype.requestHandler = function (handler) {
+                this._requestHandler = handler;
+                return this;
+            };
+            Resource.prototype.getRequestHandler = function () {
+                return this._requestHandler;
+            };
+            Resource.prototype.model = function (model) {
+                this._model = model;
+                return this;
+            };
+            Resource.prototype.getModel = function () {
+                return this._model;
+            };
+            Resource.prototype.transformer = function (transformer) {
+                this._transformer = transformer;
+                return this;
+            };
+            Resource.prototype.getTransformer = function () {
+                return this._transformer;
+            };
+            return Resource;
+        })();
+        App.Resource = Resource;
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Serializers;
+            (function (Serializers) {
+                var Graph = TSCore.App.Data.Graph.Graph;
+                var Reference = TSCore.App.Data.Graph.Reference;
+                var Exception = TSCore.Exception.Exception;
+                var DefaultSerializer = (function () {
+                    function DefaultSerializer(resources) {
+                        this.setResources(resources);
+                    }
+                    DefaultSerializer.prototype.setResources = function (resources) {
+                        var _this = this;
+                        this.resources = resources;
+                        this.resourceAliasMap = new TSCore.Data.Dictionary();
+                        this.resources.each(function (resourceName, resource) {
+                            var itemKeys = resource.getItemKeys();
+                            var collectionKeys = resource.getCollectionKeys();
+                            itemKeys.each(function (key) {
+                                _this.resourceAliasMap.set(key, resourceName);
+                            });
+                            collectionKeys.each(function (key) {
+                                _this.resourceAliasMap.set(key, resourceName);
+                            });
+                        });
+                    };
+                    DefaultSerializer.prototype.deserialize = function (resourceName, response) {
+                        var data = response.data;
+                        var total = response.data.total;
+                        var resource = this.resources.get(resourceName);
+                        var primaryKey = resource.getModel().primaryKey();
+                        var itemKeys = resource.getItemKeys();
+                        var collectionKeys = resource.getCollectionKeys();
+                        var keys = new TSCore.Data.Collection();
+                        itemKeys.each(function (key) {
+                            keys.add(key);
+                        });
+                        collectionKeys.each(function (key) {
+                            keys.add(key);
+                        });
+                        var result;
+                        _.each(response.data, function (value, key) {
+                            if (!result && keys.contains(key)) {
+                                result = value;
+                            }
+                        });
+                        if (!result) {
+                            throw new Exception('No result under existing keys found');
+                        }
+                        var references;
+                        if (_.isArray(result)) {
+                            references = _.map(result, function (itemData) {
+                                return new Reference(resourceName, itemData[primaryKey]);
+                            });
+                        }
+                        else {
+                            references = [new Reference(resourceName, result[primaryKey])];
+                        }
+                        var meta = {};
+                        if (total) {
+                            meta.total = total;
+                        }
+                        return {
+                            meta: meta,
+                            graph: this.createGraph(data),
+                            references: references
+                        };
+                    };
+                    DefaultSerializer.prototype.createGraph = function (data) {
+                        var _this = this;
+                        var graph = new Graph();
+                        this.extractResources(null, data, function (resourceName, data, key) {
+                            console.log('resourceName', resourceName, 'data', data);
+                            var resource = _this.resources.get(resourceName);
+                            var primaryKey = resource.getModel().primaryKey();
+                            var resourceId = data[primaryKey];
+                            graph.setItem(resourceName, resourceId, data);
+                        }, function (parentResourceName, parentData, key, resourceName, data) {
+                            console.log('resourceName', resourceName, 'key', key, 'data', data);
+                            var parentResource = _this.resources.get(parentResourceName);
+                            var parentPrimaryKey = parentResource.getModel().primaryKey();
+                            var parentResourceId = parentData[parentPrimaryKey];
+                            var parentItem = graph.getItem(parentResourceName, parentResourceId);
+                            var resource = _this.resources.get(resourceName);
+                            var primaryKey = resource.getModel().primaryKey();
+                            if (_.isArray(data)) {
+                                parentItem[key] = _.map(data, function (itemData) {
+                                    return new Reference(resourceName, itemData[primaryKey]);
+                                });
+                            }
+                            else if (_.isObject(data)) {
+                                parentItem[key] = new Reference(resourceName, data[primaryKey]);
+                            }
+                        });
+                        return graph;
+                    };
+                    DefaultSerializer.prototype.extractResources = function (parentResourceName, data, resourceCallback, referenceCallback) {
+                        var _this = this;
+                        _.each(data, function (value, key) {
+                            if (!_.isArray(data) && _this.resourceAliasMap.contains(key)) {
+                                var resourceName = _this.resourceAliasMap.get(key);
+                                _this.extractResources(parentResourceName, value, resourceCallback, referenceCallback);
+                                if (_.isArray(value)) {
+                                    _.each(value, function (itemData) { return resourceCallback(resourceName, itemData); });
+                                }
+                                else if (_.isObject(value)) {
+                                    resourceCallback(resourceName, value);
+                                }
+                                if (parentResourceName) {
+                                    referenceCallback(parentResourceName, data, key, resourceName, value);
+                                }
+                            }
+                            else if (_.isObject(data)) {
+                                _this.extractResources(null, value, resourceCallback, referenceCallback);
+                            }
+                        });
+                    };
+                    return DefaultSerializer;
+                })();
+                Serializers.DefaultSerializer = DefaultSerializer;
+            })(Serializers = Data.Serializers || (Data.Serializers = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
+        var Data;
+        (function (Data) {
+            var Serializers;
+            (function (Serializers) {
+                var Graph = TSCore.App.Data.Graph.Graph;
+                var Reference = TSCore.App.Data.Graph.Reference;
+                var Exception = TSCore.Exception.Exception;
+                var JsonApiSerializer = (function () {
+                    function JsonApiSerializer(resources) {
+                        this.resources = resources;
+                    }
+                    JsonApiSerializer.prototype.deserialize = function (resourceName, response) {
+                        var total = response.data.total;
+                        var data = response.data.data;
+                        var included = response.data.included;
+                        var resource = this.resources.get(resourceName);
+                        var primaryKey = resource.getModel().primaryKey();
+                        var dataGraph = this.createGraph(data);
+                        var includedGraph = this.createGraph(included);
+                        dataGraph.merge(includedGraph);
+                        var meta = {
+                            total: total
+                        };
+                        return {
+                            meta: meta,
+                            graph: dataGraph,
+                            references: _.map(data, function (itemData) {
+                                return new Reference(resourceName, itemData[primaryKey]);
+                            })
+                        };
+                    };
+                    JsonApiSerializer.prototype.createGraph = function (data) {
+                        var _this = this;
+                        var graph = new Graph();
+                        this.extractResource(data, function (resourceName, resourceId, attributes, relationships) {
+                            var resource = _this.resources.get(resourceName);
+                            if (!resource) {
+                                throw new Exception('Resource `' + resourceName + '` could not be found!');
+                            }
+                            var transformer = resource.getTransformer();
+                            var model = resource.getModel();
+                            var primaryKey = model.primaryKey();
+                            attributes[primaryKey] = parseInt(resourceId);
+                            var item = attributes;
+                            item = transformer.item(attributes);
+                            _.each(relationships, function (relationship, propertyName) {
+                                if (_.isArray(relationship.data)) {
+                                    item[propertyName] = _.map(relationship.data, function (ref) {
+                                        var resourceName = ref.type;
+                                        var resourceId = ref.id;
+                                        return new Reference(resourceName, resourceId);
+                                    });
+                                    return;
+                                }
+                                if (_.isObject(relationship.data)) {
+                                    var ref = relationship.data;
+                                    var resourceName = ref.type;
+                                    var resourceId = ref.id;
+                                    item[propertyName] = new Reference(resourceName, resourceId);
+                                    return;
+                                }
+                                item[propertyName] = relationship.data;
+                            });
+                            graph.setItem(resourceName, resourceId, item);
+                        });
+                        return graph;
+                    };
+                    JsonApiSerializer.prototype.extractResource = function (results, callback) {
+                        if (_.isArray(results)) {
+                            _.each(results, function (result) { return callback(result.type, result.id, result.attributes, result.relationships); });
+                        }
+                        else if (_.isObject(results)) {
+                            callback(results.type, results.id, results.attributes, results.relationships);
+                        }
+                    };
+                    return JsonApiSerializer;
+                })();
+                Serializers.JsonApiSerializer = JsonApiSerializer;
+            })(Serializers = Data.Serializers || (Data.Serializers = {}));
+        })(Data = App.Data || (App.Data = {}));
+    })(App = TSCore.App || (TSCore.App = {}));
+})(TSCore || (TSCore = {}));
+var TSCore;
+(function (TSCore) {
+    var App;
+    (function (App) {
         var Http;
         (function (Http) {
             var Service = (function () {
@@ -2094,60 +2195,6 @@ var TSCore;
             })();
             Http.Service = Service;
         })(Http = App.Http || (App.Http = {}));
-    })(App = TSCore.App || (TSCore.App = {}));
-})(TSCore || (TSCore = {}));
-var TSCore;
-(function (TSCore) {
-    var App;
-    (function (App) {
-        var Resource = (function () {
-            function Resource() {
-            }
-            Resource.prototype.prefix = function (prefix) {
-                this._prefix = prefix;
-                return this;
-            };
-            Resource.prototype.getPrefix = function () {
-                return this._prefix;
-            };
-            Resource.prototype.singleKey = function (singleKey) {
-                this._singleKey = singleKey;
-                return this;
-            };
-            Resource.prototype.getSingleKey = function () {
-                return this._singleKey;
-            };
-            Resource.prototype.multipleKey = function (multipleKey) {
-                this._multipleKey = multipleKey;
-                return this;
-            };
-            Resource.prototype.getMultipleKey = function () {
-                return this._multipleKey;
-            };
-            Resource.prototype.requestHandler = function (handler) {
-                this._requestHandler = handler;
-                return this;
-            };
-            Resource.prototype.getRequestHandler = function () {
-                return this._requestHandler;
-            };
-            Resource.prototype.model = function (model) {
-                this._model = model;
-                return this;
-            };
-            Resource.prototype.getModel = function () {
-                return this._model;
-            };
-            Resource.prototype.transformer = function (transformer) {
-                this._transformer = transformer;
-                return this;
-            };
-            Resource.prototype.getTransformer = function () {
-                return this._transformer;
-            };
-            return Resource;
-        })();
-        App.Resource = Resource;
     })(App = TSCore.App || (TSCore.App = {}));
 })(TSCore || (TSCore = {}));
 var TSCore;

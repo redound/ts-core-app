@@ -6,6 +6,6 @@ module TSCore.App.Data {
 
     export interface ISerializer {
 
-        serialize(data: any): IDataSourceResponse;
+        deserialize(resourceName: string, response: any): IDataSourceResponse;
     }
 }

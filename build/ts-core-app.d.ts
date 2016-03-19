@@ -294,11 +294,6 @@ declare module TSCore.App.Api {
         getRequestHandler(): RequestHandler;
     }
 }
-declare module TSCore.Api {
-    interface ISerializer {
-        serialize(data: any): any;
-    }
-}
 declare module TSCore.App.Api.RequestHandlerPlugins {
     import RequestOptions = TSCore.App.Http.RequestOptions;
     import Query = TSCore.App.Data.Query.Query;
@@ -465,31 +460,18 @@ declare module TSCore.App.Data {
         protected static _removeModel(model: any): any;
     }
 }
-declare module TSCore.App.Data.Graph {
-    class Builder {
-        protected _resourceForResourceNameCallback: any;
-        protected _resourceNameForAliasCallback: any;
-        resourceForResourceName(callback: any): void;
-        resourceNameForAlias(callback: any): void;
-        build(data: any, rootResourceName?: any): Graph;
-        protected _findResourcesRecursive(alias: any, data: any, callback: any): void;
-        protected _findResources(data: any, callback: any): void;
-    }
-}
 declare module TSCore.App.Data.DataSources {
     import IDataSource = TSCore.App.Data.IDataSource;
     import Query = TSCore.App.Data.Query.Query;
     import DataService = TSCore.App.Data.Service;
-    import Reference = TSCore.App.Data.Graph.Reference;
     import IQueryExecutor = TSCore.App.Data.Query.IQueryExecutor;
-    import Graph = TSCore.App.Data.Graph.Graph;
     class ApiDataSource implements IDataSource, IQueryExecutor {
         protected $q: ng.IQService;
         protected apiService: TSCore.App.Api.Service;
+        protected serializer: TSCore.App.Data.ISerializer;
         protected logger: TSCore.Logger.Logger;
         protected _dataService: DataService;
-        protected _resourceAliasMap: TSCore.Data.Dictionary<string, string>;
-        constructor($q: ng.IQService, apiService: TSCore.App.Api.Service, logger?: TSCore.Logger.Logger);
+        constructor($q: ng.IQService, apiService: TSCore.App.Api.Service, serializer: TSCore.App.Data.ISerializer, logger?: TSCore.Logger.Logger);
         setDataService(service: DataService): void;
         getDataService(): DataService;
         execute(query: Query<any>): ng.IPromise<IDataSourceResponse>;
@@ -502,19 +484,7 @@ declare module TSCore.App.Data.DataSources {
         notifyRemove(response: IDataSourceResponse): ng.IPromise<void>;
         clear(): ng.IPromise<any>;
         protected _transformRequest(resourceName: string, data: any): any;
-        protected _transformResponse(resourceName: string, response: any): ng.IPromise<{
-            meta: any;
-            graph: Graph;
-            references: Reference[];
-        }>;
-        protected _createDataSourceResponse(resourceName: any, resource: any, response: any): {
-            meta: any;
-            graph: Graph;
-            references: Reference[];
-        };
-        protected _createGraph(data: any): Graph;
-        protected _extractResource(results: any, callback: any): void;
-        protected _getResourcesAliasMap(): TSCore.Data.Dictionary<string, string>;
+        protected _transformResponse(resourceName: string, response: any): IDataSourceResponse;
     }
 }
 declare module TSCore.App.Data.DataSources {
@@ -565,6 +535,12 @@ declare module TSCore.App.Data {
     }
 }
 declare module TSCore.App.Data {
+    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    interface ISerializer {
+        deserialize(resourceName: string, response: any): IDataSourceResponse;
+    }
+}
+declare module TSCore.App.Data {
     import Model = TSCore.Data.Model;
     import Query = TSCore.App.Data.Query.Query;
     import ModelList = TSCore.Data.ModelList;
@@ -583,6 +559,60 @@ declare module TSCore.App.Data {
         removeModel(model: Model): ng.IPromise<void>;
     }
 }
+declare module TSCore.App {
+    import RequestHandler = TSCore.App.Api.RequestHandler;
+    import ITransformer = TSCore.App.Data.ITransformer;
+    import IModel = TSCore.Data.IModel;
+    class Resource {
+        protected _prefix: string;
+        protected _itemKeys: TSCore.Data.Collection<string>;
+        protected _collectionKeys: TSCore.Data.Collection<string>;
+        protected _model: IModel;
+        protected _requestHandler: RequestHandler;
+        protected _transformer: ITransformer;
+        protected _queryTransformer: any;
+        prefix(prefix: string): this;
+        getPrefix(): string;
+        itemKey(...itemKeys: string[]): this;
+        getItemKeys(): TSCore.Data.Collection<string>;
+        collectionKey(...collectionKeys: string[]): this;
+        getCollectionKeys(): TSCore.Data.Collection<string>;
+        requestHandler(handler: RequestHandler): this;
+        getRequestHandler(): RequestHandler;
+        model(model: IModel): this;
+        getModel(): IModel;
+        transformer(transformer: ITransformer): this;
+        getTransformer(): ITransformer;
+    }
+}
+declare module TSCore.App.Data.Serializers {
+    import ISerializer = TSCore.App.Data.ISerializer;
+    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    import Graph = TSCore.App.Data.Graph.Graph;
+    import Resource = TSCore.App.Resource;
+    class DefaultSerializer implements ISerializer {
+        protected resources: TSCore.Data.Dictionary<string, Resource>;
+        protected resourceAliasMap: TSCore.Data.Dictionary<string, string>;
+        constructor(resources: TSCore.Data.Dictionary<string, Resource>);
+        setResources(resources: TSCore.Data.Dictionary<string, Resource>): void;
+        deserialize(resourceName: string, response: any): IDataSourceResponse;
+        protected createGraph(data: any): Graph;
+        protected extractResources(parentResourceName: string, data: any, resourceCallback: any, referenceCallback: any): void;
+    }
+}
+declare module TSCore.App.Data.Serializers {
+    import ISerializer = TSCore.App.Data.ISerializer;
+    import IDataSourceResponse = TSCore.App.Data.IDataSourceResponse;
+    import Graph = TSCore.App.Data.Graph.Graph;
+    import Resource = TSCore.App.Resource;
+    class JsonApiSerializer implements ISerializer {
+        protected resources: TSCore.Data.Dictionary<string, Resource>;
+        constructor(resources: TSCore.Data.Dictionary<string, Resource>);
+        deserialize(resourceName: string, response: any): IDataSourceResponse;
+        protected createGraph(data: any): Graph;
+        protected extractResource(results: any, callback: any): void;
+    }
+}
 declare module TSCore.App.Http {
     import RequestOptions = TSCore.App.Http.RequestOptions;
     class Service {
@@ -597,32 +627,6 @@ declare module TSCore.App.Http {
         unsetDefaultHeader(name: any): void;
         request(requestOptions: RequestOptions): ng.IHttpPromise<any>;
         private _applyDefaults(requestOptions);
-    }
-}
-declare module TSCore.App {
-    import RequestHandler = TSCore.App.Api.RequestHandler;
-    import ITransformer = TSCore.App.Data.ITransformer;
-    import IModel = TSCore.Data.IModel;
-    class Resource {
-        protected _prefix: string;
-        protected _singleKey: string;
-        protected _multipleKey: string;
-        protected _model: IModel;
-        protected _requestHandler: RequestHandler;
-        protected _transformer: ITransformer;
-        protected _queryTransformer: any;
-        prefix(prefix: string): Resource;
-        getPrefix(): string;
-        singleKey(singleKey: string): Resource;
-        getSingleKey(): string;
-        multipleKey(multipleKey: string): Resource;
-        getMultipleKey(): string;
-        requestHandler(handler: RequestHandler): Resource;
-        getRequestHandler(): RequestHandler;
-        model(model: IModel): Resource;
-        getModel(): IModel;
-        transformer(transformer: ITransformer): Resource;
-        getTransformer(): ITransformer;
     }
 }
 declare module TSCore.App.UI.KeyCodes {

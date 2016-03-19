@@ -67,10 +67,10 @@ var object = {
 
 /// <reference path="../../TSCore.spec.ts" />
 
-import Serializer = TSCore.App.Api.Serializer;
+import DefaultSerializer = TSCore.App.Data.Serializers.DefaultSerializer;
 declare var describe, it, expect, jasmine, beforeEach, beforeAll;
 
-describe("TSCore.App.Api.Serializer", () => {
+describe("TSCore.App.Data.Serializer.DefaultSerializer", () => {
 
     beforeAll(() => {
 
